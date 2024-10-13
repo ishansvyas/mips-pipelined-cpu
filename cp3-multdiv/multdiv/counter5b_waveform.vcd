@@ -1,0 +1,610 @@
+$date
+	Wed Oct 02 17:26:22 2024
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	100ps
+$end
+$scope module counter5b_tb $end
+$var wire 5 ! out [4:0] $end
+$var reg 1 " clock $end
+$var reg 1 # clr $end
+$var reg 1 $ enable $end
+$scope module uut $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 $ enable $end
+$var wire 4 % t [3:0] $end
+$var wire 5 & out [4:0] $end
+$scope module b0 $end
+$var wire 1 $ T $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 ' nT $end
+$var wire 1 ( nq $end
+$var wire 1 ) w1a $end
+$var wire 1 * w1b $end
+$var wire 1 + w2 $end
+$var wire 1 , q $end
+$scope module dff $end
+$var wire 1 " clk $end
+$var wire 1 # clr $end
+$var wire 1 + d $end
+$var wire 1 - en $end
+$var reg 1 , q $end
+$upscope $end
+$upscope $end
+$scope module b1 $end
+$var wire 1 . T $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 / nT $end
+$var wire 1 0 nq $end
+$var wire 1 1 w1a $end
+$var wire 1 2 w1b $end
+$var wire 1 3 w2 $end
+$var wire 1 4 q $end
+$scope module dff $end
+$var wire 1 " clk $end
+$var wire 1 # clr $end
+$var wire 1 3 d $end
+$var wire 1 5 en $end
+$var reg 1 4 q $end
+$upscope $end
+$upscope $end
+$scope module b2 $end
+$var wire 1 6 T $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 7 nT $end
+$var wire 1 8 nq $end
+$var wire 1 9 w1a $end
+$var wire 1 : w1b $end
+$var wire 1 ; w2 $end
+$var wire 1 < q $end
+$scope module dff $end
+$var wire 1 " clk $end
+$var wire 1 # clr $end
+$var wire 1 ; d $end
+$var wire 1 = en $end
+$var reg 1 < q $end
+$upscope $end
+$upscope $end
+$scope module b3 $end
+$var wire 1 > T $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 ? nT $end
+$var wire 1 @ nq $end
+$var wire 1 A w1a $end
+$var wire 1 B w1b $end
+$var wire 1 C w2 $end
+$var wire 1 D q $end
+$scope module dff $end
+$var wire 1 " clk $end
+$var wire 1 # clr $end
+$var wire 1 C d $end
+$var wire 1 E en $end
+$var reg 1 D q $end
+$upscope $end
+$upscope $end
+$scope module b4 $end
+$var wire 1 F T $end
+$var wire 1 " clock $end
+$var wire 1 # clr $end
+$var wire 1 G nT $end
+$var wire 1 H nq $end
+$var wire 1 I w1a $end
+$var wire 1 J w1b $end
+$var wire 1 K w2 $end
+$var wire 1 L q $end
+$scope module dff $end
+$var wire 1 " clk $end
+$var wire 1 # clr $end
+$var wire 1 K d $end
+$var wire 1 M en $end
+$var reg 1 L q $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+1M
+0L
+0K
+0J
+0I
+1H
+1G
+0F
+1E
+0D
+0C
+0B
+0A
+1@
+1?
+0>
+1=
+0<
+0;
+0:
+09
+18
+17
+06
+15
+04
+03
+02
+01
+10
+1/
+0.
+1-
+0,
+1+
+1*
+0)
+1(
+0'
+b0 &
+b0 %
+1$
+0#
+0"
+b0 !
+$end
+#50
+13
+0/
+12
+0+
+1.
+0*
+b1 %
+0(
+b1 !
+b1 &
+1,
+1"
+#100
+0"
+#150
+0;
+11
+17
+0:
+1/
+13
+06
+1+
+0.
+02
+1*
+b0 %
+00
+1(
+14
+b10 !
+b10 &
+0,
+1"
+#200
+0"
+#250
+1;
+03
+07
+1:
+01
+16
+0/
+0+
+1.
+0*
+b11 %
+0(
+b11 !
+b11 &
+1,
+1"
+#300
+0"
+#350
+0C
+19
+1?
+0B
+17
+1/
+1;
+0>
+03
+06
+1+
+0.
+0:
+02
+1*
+b0 %
+08
+10
+1(
+1<
+04
+b100 !
+b100 &
+0,
+1"
+#400
+0"
+#450
+13
+0/
+12
+0+
+1.
+0*
+b1 %
+0(
+b101 !
+b101 &
+1,
+1"
+#500
+0"
+#550
+0C
+1;
+1?
+0B
+19
+0>
+11
+17
+1/
+13
+06
+1+
+0.
+02
+1*
+b0 %
+00
+1(
+14
+b110 !
+b110 &
+0,
+1"
+#600
+0"
+#650
+1C
+0;
+0?
+1B
+09
+1>
+03
+07
+01
+16
+0/
+0+
+1.
+0*
+b111 %
+0(
+b111 !
+b111 &
+1,
+1"
+#700
+0"
+#750
+0K
+1A
+1G
+0J
+1?
+17
+1/
+1C
+0F
+0;
+0>
+03
+06
+1+
+0.
+0B
+0:
+02
+1*
+b0 %
+0@
+18
+10
+1(
+1D
+0<
+04
+b1000 !
+b1000 &
+0,
+1"
+#800
+0"
+#850
+13
+0/
+12
+0+
+1.
+0*
+b1 %
+0(
+b1001 !
+b1001 &
+1,
+1"
+#900
+0"
+#950
+0;
+11
+17
+0:
+1/
+13
+06
+1+
+0.
+02
+1*
+b0 %
+00
+1(
+14
+b1010 !
+b1010 &
+0,
+1"
+#1000
+0"
+#1050
+1;
+03
+07
+1:
+01
+16
+0/
+0+
+1.
+0*
+b11 %
+0(
+b1011 !
+b1011 &
+1,
+1"
+#1100
+0"
+#1150
+0K
+1G
+0J
+1C
+0F
+1A
+19
+1?
+17
+1/
+1;
+0>
+03
+06
+1+
+0.
+0:
+02
+1*
+b0 %
+08
+10
+1(
+1<
+04
+b1100 !
+b1100 &
+0,
+1"
+#1200
+0"
+#1250
+13
+0/
+12
+0+
+1.
+0*
+b1 %
+0(
+b1101 !
+b1101 &
+1,
+1"
+#1300
+0"
+#1350
+0K
+1G
+0J
+1C
+0F
+1A
+1;
+1?
+19
+0>
+11
+17
+1/
+13
+06
+1+
+0.
+02
+1*
+b0 %
+00
+1(
+14
+b1110 !
+b1110 &
+0,
+1"
+#1400
+0"
+#1450
+1K
+0G
+1J
+0C
+1F
+0A
+0;
+0?
+09
+1>
+03
+07
+01
+16
+0/
+0+
+1.
+0*
+b1111 %
+0(
+b1111 !
+b1111 &
+1,
+1"
+#1500
+0"
+#1550
+1I
+1G
+1?
+17
+1/
+1K
+0C
+0F
+0;
+0>
+03
+06
+1+
+0.
+0J
+0B
+0:
+02
+1*
+b0 %
+0H
+1@
+18
+10
+1(
+1L
+0D
+0<
+04
+b10000 !
+b10000 &
+0,
+1"
+#1600
+0K
+0I
+1H
+b0 !
+b0 &
+0L
+0"
+1#
+#1650
+1"
+#1700
+0"
+#1750
+1"
+#1800
+0"
+#1850
+1"
+#1900
+0"
+#1950
+1"
+#2000
+0"
+#2050
+1"
+#2100
+0"
+#2150
+1"
+#2200
+0"
+#2250
+1"
+#2300
+0"
+#2350
+1"
+#2400
+0"
+#2450
+1"
+#2500
+0"
+#2550
+1"
+#2600
+0"
+#2650
+1"
+#2700
+0"
+#2750
+1"
+#2800
+0"
+#2850
+1"
+#2900
+0"
+#2950
+1"
+#3000
+0"
+#3050
+1"
+#3100
+0"
+#3150
+1"
+#3200
+0"

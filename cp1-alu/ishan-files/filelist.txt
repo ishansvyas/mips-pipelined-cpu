@@ -1,0 +1,10 @@
+alu.v
+and32.v
+cla_inner.v
+cla_outer.v
+mux4.v
+mux8.v
+not32.v
+or32.v
+sll.v
+sra.v

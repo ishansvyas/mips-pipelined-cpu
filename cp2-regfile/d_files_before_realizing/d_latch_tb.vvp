@@ -1,0 +1,83 @@
+#! /c/Source/iverilog-install/bin/vvp
+:ivl_version "12.0 (devel)" "(s20150603-1110-g18392a46)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision - 10;
+:vpi_module "C:\iverilog\lib\ivl\system.vpi";
+:vpi_module "C:\iverilog\lib\ivl\vhdl_sys.vpi";
+:vpi_module "C:\iverilog\lib\ivl\vhdl_textio.vpi";
+:vpi_module "C:\iverilog\lib\ivl\v2005_math.vpi";
+:vpi_module "C:\iverilog\lib\ivl\va_math.vpi";
+S_000001ea9233bc80 .scope module, "d_latch_tb" "d_latch_tb" 2 2;
+ .timescale -9 -10;
+v000001ea9243ad70_0 .net "Q", 0 0, L_000001ea9243c000;  1 drivers
+v000001ea9243b770_0 .var "data", 0 0;
+v000001ea9243ae10_0 .var "enable", 0 0;
+v000001ea9243af50_0 .net "notQ", 0 0, L_000001ea9243beb0;  1 drivers
+E_000001ea92339460 .event anyedge, v000001ea923c2b20_0, v000001ea9233be10_0;
+S_000001ea923f6ab0 .scope module, "d_latch1" "d_latch" 2 6, 3 1 0, S_000001ea9233bc80;
+ .timescale 0 0;
+    .port_info 0 /INPUT 1 "data";
+    .port_info 1 /INPUT 1 "enable";
+    .port_info 2 /OUTPUT 1 "Q";
+    .port_info 3 /OUTPUT 1 "notQ";
+L_000001ea9233b260 .functor NOT 1, v000001ea9243b770_0, C4<0>, C4<0>, C4<0>;
+L_000001ea923c32b0 .functor NAND 1, v000001ea9243b770_0, v000001ea9243ae10_0, C4<1>, C4<1>;
+L_000001ea923c2ff0 .functor NAND 1, L_000001ea9233b260, v000001ea9243ae10_0, C4<1>, C4<1>;
+L_000001ea9243be40 .functor NAND 1, L_000001ea923c32b0, L_000001ea9243c380, C4<1>, C4<1>;
+L_000001ea9243c380 .functor NAND 1, L_000001ea923c2ff0, L_000001ea9243be40, C4<1>, C4<1>;
+L_000001ea9243c000 .functor BUFZ 1, L_000001ea9243be40, C4<0>, C4<0>, C4<0>;
+L_000001ea9243beb0 .functor BUFZ 1, L_000001ea9243c380, C4<0>, C4<0>, C4<0>;
+v000001ea9233b1c0_0 .net "Q", 0 0, L_000001ea9243c000;  alias, 1 drivers
+v000001ea923c2b20_0 .net "data", 0 0, v000001ea9243b770_0;  1 drivers
+v000001ea9233be10_0 .net "enable", 0 0, v000001ea9243ae10_0;  1 drivers
+v000001ea9233beb0_0 .net "notQ", 0 0, L_000001ea9243beb0;  alias, 1 drivers
+v000001ea923f4730_0 .net "not_data", 0 0, L_000001ea9233b260;  1 drivers
+v000001ea923f47d0_0 .net "w1l2", 0 0, L_000001ea923c32b0;  1 drivers
+v000001ea923f6c40_0 .net "w1l3", 0 0, L_000001ea9243be40;  1 drivers
+v000001ea923f6ce0_0 .net "w2l2", 0 0, L_000001ea923c2ff0;  1 drivers
+v000001ea9243aeb0_0 .net "w2l3", 0 0, L_000001ea9243c380;  1 drivers
+    .scope S_000001ea9233bc80;
+T_0 ;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v000001ea9243b770_0, 0, 1;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v000001ea9243ae10_0, 0, 1;
+    %delay 1600, 0;
+    %vpi_call 2 12 "$finish" {0 0 0};
+    %end;
+    .thread T_0;
+    .scope S_000001ea9233bc80;
+T_1 ;
+    %delay 400, 0;
+    %load/vec4 v000001ea9243ae10_0;
+    %nor/r;
+    %store/vec4 v000001ea9243ae10_0, 0, 1;
+    %jmp T_1;
+    .thread T_1;
+    .scope S_000001ea9233bc80;
+T_2 ;
+    %delay 100, 0;
+    %vpi_func 2 19 "$random" 32 {0 0 0};
+    %pad/s 1;
+    %store/vec4 v000001ea9243b770_0, 0, 1;
+    %jmp T_2;
+    .thread T_2;
+    .scope S_000001ea9233bc80;
+T_3 ;
+    %wait E_000001ea92339460;
+    %delay 10, 0;
+    %vpi_call 2 23 "$display", "D:%b, E:%b -> Q:%b, !Q:%b", v000001ea9243b770_0, v000001ea9243ae10_0, v000001ea9243ad70_0, v000001ea9243af50_0 {0 0 0};
+    %jmp T_3;
+    .thread T_3, $push;
+    .scope S_000001ea9233bc80;
+T_4 ;
+    %vpi_call 2 26 "$dumpfile", "d_latch_waveform.vcd" {0 0 0};
+    %vpi_call 2 27 "$dumpvars", 32'sb00000000000000000000000000000000, S_000001ea9233bc80 {0 0 0};
+    %end;
+    .thread T_4;
+# The file index is used to find the file name in the following table.
+:file_names 4;
+    "N/A";
+    "<interactive>";
+    "d_latch_tb.v";
+    "d_latch.v";
