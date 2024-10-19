@@ -62,9 +62,11 @@ module processor(
 	input [31:0] data_readRegA, data_readRegB;
 
 	/* YOUR CODE STARTS HERE */
-    wire [31:0] pc_in;
+    wire [31:0] pc_in, pc_plus_one;
     
 	register program_counter(.out(address_imem), .in(pc_in), .clk(clock), .en(1'b1), .clr(reset));
+    alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
+    assign pc_in = pc_plus_one;
 	/* END CODE */
 
 endmodule
