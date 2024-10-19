@@ -1,4 +1,4 @@
-module cla_outer (data_operandA, data_operandB, Cin, data_result, Cout); 
+module alu_cla_outer (data_operandA, data_operandB, Cin, data_result, Cout); 
 
     input [31:0] data_operandA, data_operandB;
     input Cin;
@@ -38,19 +38,19 @@ module cla_outer (data_operandA, data_operandB, Cin, data_result, Cout);
     //////////// CALCULATE SUMS
 
     // low 8 bits
-    cla_inner lowest8(.data_operandA(data_operandA[7:0]), .data_operandB(data_operandB[7:0]),
+    alu_cla_inner lowest8(.data_operandA(data_operandA[7:0]), .data_operandB(data_operandB[7:0]),
     .Cin(Cin), .data_result(data_result[7:0]), .Cout(carry[1]), .big_G(big_G[0]), .big_P(big_P[0]));
 
     // low-med 8 bits
-    cla_inner lowmed8(.data_operandA(data_operandA[15:8]), .data_operandB(data_operandB[15:8]),
+    alu_cla_inner lowmed8(.data_operandA(data_operandA[15:8]), .data_operandB(data_operandB[15:8]),
     .Cin(carry[1]), .data_result(data_result[15:8]), .Cout(carry[2]), .big_G(big_G[1]), .big_P(big_P[1]));
 
     // hi-med 8 bits
-    cla_inner himed8(.data_operandA(data_operandA[23:16]), .data_operandB(data_operandB[23:16]),
+    alu_cla_inner himed8(.data_operandA(data_operandA[23:16]), .data_operandB(data_operandB[23:16]),
     .Cin(carry[2]), .data_result(data_result[23:16]), .Cout(carry[3]), .big_G(big_G[2]), .big_P(big_P[2]));
 
     // high 8 bits
-    cla_inner highest8(.data_operandA(data_operandA[31:24]), .data_operandB(data_operandB[31:24]),
+    alu_cla_inner highest8(.data_operandA(data_operandA[31:24]), .data_operandB(data_operandB[31:24]),
     .Cin(carry[3]), .data_result(data_result[31:24]), .Cout(carry[4]), .big_G(big_G[3]), .big_P(big_P[3]));
 
     // FINAL OUTPUTS

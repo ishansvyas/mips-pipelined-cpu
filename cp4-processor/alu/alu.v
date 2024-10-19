@@ -17,7 +17,7 @@ module alu(data_operandA, data_operandB, ctrl_ALUopcode, ctrl_shiftamt, data_res
     assign w1 = ctrl_ALUopcode[0] ? not_data_operandB : data_operandB;
 
     // TEST LINE assign y1=w1;
-    cla_outer adder(.data_operandA(data_operandA), .data_operandB(w1), .Cin(ctrl_ALUopcode[0]), .data_result(y1), .Cout(cout_discard));
+    alu_cla_outer adder(.data_operandA(data_operandA), .data_operandB(w1), .Cin(ctrl_ALUopcode[0]), .data_result(y1), .Cout(cout_discard));
 
     and32 bitwise_and(.out(y2), .in1(data_operandA), .in2(data_operandB));
     or32 bitwise_or(.out(y3), .in1(data_operandA), .in2(data_operandB));

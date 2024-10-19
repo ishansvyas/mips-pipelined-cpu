@@ -1,4 +1,4 @@
-module cla_inner(data_operandA, data_operandB, Cin, data_result, Cout, big_G, big_P);
+module alu_cla_inner(data_operandA, data_operandB, Cin, data_result, Cout, big_G, big_P);
     input [7:0] data_operandA, data_operandB;
     input Cin;
 

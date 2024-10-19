@@ -62,7 +62,9 @@ module processor(
 	input [31:0] data_readRegA, data_readRegB;
 
 	/* YOUR CODE STARTS HERE */
-	
+    wire [31:0] pc_in;
+    
+	register program_counter(.out(address_imem), .in(pc_in), .clk(clock), .en(1'b1), .clr(reset));
 	/* END CODE */
 
 endmodule
