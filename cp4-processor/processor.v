@@ -62,11 +62,41 @@ module processor(
 	input [31:0] data_readRegA, data_readRegB;
 
 	/* YOUR CODE STARTS HERE */
+
+    wire not_clock;
+    assign not_clock = ~(clock);
+
+    ////////// START OF FETCH 
+
     wire [31:0] pc_in, pc_plus_one;
     
 	register program_counter(.out(address_imem), .in(pc_in), .clk(clock), .en(1'b1), .clr(reset));
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
     assign pc_in = pc_plus_one;
+
+    ////////// END OF FETCH 
+    wire [31:0] fetch_PC_out, fetch_INSN_out;
+    register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(1'b1), .clr(reset));
+    register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
+    ////////// START OF DECODE
+
+    wire [31:0] data_readRegA, data_readRegB, data_writeReg;
+    // assign inputs to regfile, output of regfile in latch
+    // NOTE: write_enable is disabled currently
+    regfile regfile(
+        .clock(clock),
+        .ctrl_writeEnable(1'b0), .ctrl_reset(reset), .ctrl_writeReg(fetch_INSN_out[26:22]),
+        .ctrl_readRegA(fetch_INSN_out[21:17]), .ctrl_readRegB(fetch_INSN_out[16:12]), .data_writeReg(data_writeReg),
+        .data_readRegA(data_readRegA), .data_readRegB(data_readRegB));
+
+    ////////// END OF DECODE
+    wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
+    register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(1'b1), .clr(reset));
+    register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(1'b1), .clr(reset));
+    register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    ////////// START OF EXECUTE
+
 	/* END CODE */
 
 endmodule
