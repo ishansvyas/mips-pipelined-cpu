@@ -80,17 +80,15 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE
 
-    wire [31:0] data_readRegA_w, data_readRegB_w, data_writeReg_w;
+    wire [31:0] data_writeReg_w;
     // assign inputs to regfile, output of regfile in latch
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
-    assign ctrl_writeEnable = 1'b0;
+    assign ctrl_writeEnable = 1'b0; // NOTE: CURRENTLY DISABLED
     assign ctrl_writeReg = fetch_INSN_out[26:22];
     assign ctrl_readRegA = fetch_INSN_out[21:17];
     assign ctrl_readRegB = fetch_INSN_out[16:12];
 	assign data_writeReg = data_writeReg_w;
-    assign data_readRegA = data_readRegA_w;
-    assign data_readRegB = data_readRegB_w;
 
     ////////// END OF DECODE
     wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
@@ -99,6 +97,29 @@ module processor(
     register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(1'b1), .clr(reset));
     register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF EXECUTE
+
+    alu execute_alu(
+            .data_operandA(), .data_operandB(),
+            .ctrl_ALUopcode(), .ctrl_shiftamt(),
+            .data_result(),
+            .isNotEqual(), .isLessThan(), .overflow());    
+/* WIRE LENGTHS: 
+    input [31:0] data_operandA, data_operandB;
+    input [4:0] ctrl_ALUopcode, ctrl_shiftamt;
+
+    output [31:0] data_result;
+    output isNotEqual, isLessThan, overflow;
+*/
+
+
+    ////////// END OF EXECUTE
+    wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
+    register execute_pc(.out(execute_pc_out), .in(decode_PC_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register execute_O(.out(execute_O_out), .in(/*   TO ASSIGN!!!!    */), .clk(not_clock), .en(1'b1), .clr(reset));
+    register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    ////////// START OF MEMORY
+
 
 	/* END CODE */
 
