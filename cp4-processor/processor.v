@@ -80,14 +80,17 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE
 
-    wire [31:0] data_readRegA, data_readRegB, data_writeReg;
+    wire [31:0] data_readRegA_w, data_readRegB_w, data_writeReg_w;
     // assign inputs to regfile, output of regfile in latch
-    // NOTE: write_enable is disabled currently
-    regfile regfile(
-        .clock(clock),
-        .ctrl_writeEnable(1'b0), .ctrl_reset(reset), .ctrl_writeReg(fetch_INSN_out[26:22]),
-        .ctrl_readRegA(fetch_INSN_out[21:17]), .ctrl_readRegB(fetch_INSN_out[16:12]), .data_writeReg(data_writeReg),
-        .data_readRegA(data_readRegA), .data_readRegB(data_readRegB));
+
+    /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
+    assign ctrl_writeEnable = 1'b0;
+    assign ctrl_writeReg = fetch_INSN_out[26:22];
+    assign ctrl_readRegA = fetch_INSN_out[21:17];
+    assign ctrl_readRegB = fetch_INSN_out[16:12];
+	assign data_writeReg = data_writeReg_w;
+    assign data_readRegA = data_readRegA_w;
+    assign data_readRegB = data_readRegB_w;
 
     ////////// END OF DECODE
     wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
