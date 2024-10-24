@@ -64,7 +64,7 @@ module processor(
 	/* YOUR CODE STARTS HERE */
 
     wire not_clock;
-    assign not_clock = ~(clock);
+    assign not_clock = !clock;
 
     ////////// START OF FETCH 
 
