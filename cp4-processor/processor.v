@@ -148,7 +148,6 @@ module processor(
     assign pc_branch_control[1] = take_T || take_rd;
 
 
-
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
     register execute_O(.out(execute_O_out), .in(alu_out), .clk(not_clock), .en(1'b1), .clr(reset));
