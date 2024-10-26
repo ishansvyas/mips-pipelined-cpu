@@ -65,6 +65,7 @@ module processor(
 
     wire not_clock;
     assign not_clock = !clock;
+    wire [31:0] nop = 32'd0; 
 
     ////////// START OF FETCH //////////
 
