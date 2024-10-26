@@ -74,7 +74,7 @@ module processor(
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
     
     // next PC calculation [SEE branching IN EXECUTE FOR LOGIC/DESTINATION CALCULATION]
-    mux4 pc_branch_control(.out(pc_in), .select(pc_branch_control), .in0(pc_plus_one), .in1(pc_plus_N), .in2(decode_B_out), .in3(pc_T));
+    mux4 pc_branch_control_mux(.out(pc_in), .select(pc_branch_control), .in0(pc_plus_one), .in1(pc_plus_N), .in2(decode_B_out), .in3(pc_T));
     /*      PC+1:       pc_plus_one
             PC+1+N:     pc_plus_N
             $rd:        decode_B_out
@@ -88,15 +88,14 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE //////////
 
-    wire [31:0] data_writeReg_w;
     // assign inputs to regfile, output of regfile in latch
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
-    assign ctrl_writeEnable = 1'b0; // NOTE: CURRENTLY DISABLED
+    // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
     assign ctrl_writeReg = fetch_INSN_out[26:22];
     assign ctrl_readRegA = fetch_INSN_out[21:17];
     assign ctrl_readRegB = !(|(fetch_INSN_out[31:27]^5'b10110)) ? 5'b11110 : fetch_INSN_out[16:12]; // BEX LOGIC
-	assign data_writeReg = data_writeReg_w;
+	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
     ////////// END OF DECODE //////////
     wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
@@ -110,21 +109,25 @@ module processor(
     wire is_R_type;
     assign is_R_type = !(|decode_INSN_out[31:27]);
     wire [31:0] sign_extend_immed_out, ALU_input_B;
-    sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[31:27]));
+    sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[16:0]));
     assign ALU_input_B = is_R_type ? decode_B_out : sign_extend_immed_out;
+
+    // ALU opcode -> account for addi insn needing opcode to be 00000.
+    wire [4:0] execute_alu_opc;
+    assign execute_alu_opc = |(decode_INSN_out[31:27]^5'b00101) ? decode_INSN_out[6:2] : 5'd0;
 
     // ALU; NOTE: isLT, isNE are unused. OVF undefined too but that's ok?
     wire [31:0] alu_out;
     wire alu_isNE, alu_isLT;
     alu execute_alu(
             .data_operandA(decode_A_out), .data_operandB(ALU_input_B),
-            .ctrl_ALUopcode(decode_INSN_out[6:2]), .ctrl_shiftamt(decode_INSN_out[11:7]),
+            .ctrl_ALUopcode(execute_alu_opc), .ctrl_shiftamt(decode_INSN_out[11:7]),
             .data_result(alu_out),
             .isNotEqual(alu_isNE), .isLessThan(alu_isLT), .overflow());    
 
     // branching: destination calculation
     wire [31:0] pc_plus_N, pc_T;
-    alu_cla_outer pc_plus_N(.data_operandA(decode_PC_out), .data_operandB(sign_extend_immed_out), .Cin(1'b0), .data_result(pc_plus_N), .Cout());
+    alu_cla_outer pc_plus_N_alu(.data_operandA(decode_PC_out), .data_operandB(sign_extend_immed_out), .Cin(1'b0), .data_result(pc_plus_N), .Cout());
     assign pc_T[26:0] = decode_INSN_out[26:0];
     assign pc_T[31:27] = {5{decode_INSN_out[26]}};
 
@@ -150,6 +153,22 @@ module processor(
     register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF MEMORY //////////
 
+    assign address_dmem = execute_O_out;
+    assign data = execute_B_out;
+    assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
+
+    ////////// END OF MEMORY //////////
+    wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
+    register memory_O(.out(memory_O_out), .in(execute_O_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register memory_D(.out(memory_D_out), .in(q_dmem), .clk(not_clock), .en(1'b1), .clr(reset));
+    register memory_INSN(.out(memory_INSN_out), .in(execute_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    ////////// START OF WRITEBACK //////////
+
+    wire [4:0] wb_opc;
+    assign wb_opc = memory_INSN_out[31:27];
+    assign ctrl_writeEnable =   !(|(wb_opc^5'b00000)) || !(|(wb_opc^5'b00101)) || !(|(wb_opc^5'b01000)) 
+                                || !(|(wb_opc^5'b00011)) || !(|(wb_opc^5'b10101));
+    assign data_writeReg = |(wb_opc^5'b01000) ? memory_O_out : memory_D_out;
 
 	/* END CODE */
 

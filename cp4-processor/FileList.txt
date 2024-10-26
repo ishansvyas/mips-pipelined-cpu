@@ -9,6 +9,7 @@ alu\alu_cla_outer.v
 alu\and32.v
 alu\not32.v
 alu\or32.v
+alu\sign_extend.v
 multdiv\cla_inner.v
 multdiv\cla_outer.v
 multdiv\cla_outer_32.v
