@@ -89,13 +89,14 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE //////////
 
-    // assign inputs to regfile, output of regfile in latch
+    wire [1:0] mux_ctrl_readRegB;
+    assign mux_ctrl_readRegB[1] = !(|(fetch_INSN_out[31:27]^5'b10110)); // BEX condition
+    assign mux_ctrl_readRegB[0] = !(|(fetch_INSN_out[31:27]^5'b00111)); // SW  condition
 
-    /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
     // assign ctrl_writeReg IS DONE IN WRITEBACK STAGE
     assign ctrl_readRegA = fetch_INSN_out[21:17];
-    assign ctrl_readRegB = !(|(fetch_INSN_out[31:27]^5'b10110)) ? 5'b11110 : fetch_INSN_out[16:12]; // BEX LOGIC
+    mux4 #(5) ctrl_readRegB_logic(.out(ctrl_readRegB), .select(mux_ctrl_readRegB), .in0(fetch_INSN_out[16:12]), .in1(fetch_INSN_out[26:22]), .in2(5'd0), .in3(5'b11110));
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
     ////////// END OF DECODE //////////
@@ -115,7 +116,8 @@ module processor(
 
     // ALU opcode -> account for addi insn needing opcode to be 00000.
     wire [4:0] execute_alu_opc;
-    assign execute_alu_opc = |(decode_INSN_out[31:27]^5'b00101) ? decode_INSN_out[6:2] : 5'd0;
+    wire is_I_type = !(|(decode_INSN_out[31:27]^5'b00101)) || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000));
+    assign execute_alu_opc = is_I_type ? 5'd0 : decode_INSN_out[6:2];
 
     // ALU; NOTE: isLT, isNE are unused. OVF undefined too but that's ok?
     wire [31:0] alu_out;
