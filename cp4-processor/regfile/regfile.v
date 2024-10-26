@@ -32,7 +32,8 @@ module regfile (
 	genvar tri_state;
 	// make 0th register
 	and register_enable_and0(reg_in_enable[0], ctrl_writeEnable, RDbus[0]);
-	register regfile0(.out(reg_out[(31):(0)]), .in(data_writeReg), .clk(clock), .en(reg_in_enable[0]), .clr(ctrl_reset));
+	register regfile0(.out(reg_out[(31):(0)]), .in(data_writeReg), .clk(clock), .en(1'b0), .clr(ctrl_reset));
+	// before, above was the following: .en(reg_in_enable[0])
 	generate 
 		for (tri_state=0;tri_state<32;tri_state = tri_state + 1) begin: tri_state_buffers0
 				assign data_readRegA[tri_state] = RS1bus[0] ? 1'b0 : 1'bZ;

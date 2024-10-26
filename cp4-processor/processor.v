@@ -92,7 +92,7 @@ module processor(
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
-    assign ctrl_writeReg = fetch_INSN_out[26:22];
+    // assign ctrl_writeReg IS DONE IN WRITEBACK STAGE
     assign ctrl_readRegA = fetch_INSN_out[21:17];
     assign ctrl_readRegB = !(|(fetch_INSN_out[31:27]^5'b10110)) ? 5'b11110 : fetch_INSN_out[16:12]; // BEX LOGIC
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
@@ -166,9 +166,10 @@ module processor(
 
     wire [4:0] wb_opc;
     assign wb_opc = memory_INSN_out[31:27];
-    assign ctrl_writeEnable =   !(|(wb_opc^5'b00000)) || !(|(wb_opc^5'b00101)) || !(|(wb_opc^5'b01000)) 
+    assign ctrl_writeEnable =   !(|(wb_opc^5'b00000) || !(|memory_INSN_out)) || !(|(wb_opc^5'b00101)) || !(|(wb_opc^5'b01000)) 
                                 || !(|(wb_opc^5'b00011)) || !(|(wb_opc^5'b10101));
     assign data_writeReg = |(wb_opc^5'b01000) ? memory_O_out : memory_D_out;
+    assign ctrl_writeReg = memory_INSN_out[26:22];
 
 	/* END CODE */
 

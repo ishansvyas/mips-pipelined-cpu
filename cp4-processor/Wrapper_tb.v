@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "sample");
+module Wrapper_tb #(parameter FILE = "pos_arithmetic_no_bypass");
 
 	// FileData
 	localparam DIR = "Test Files/";
