@@ -69,7 +69,7 @@ module processor(
 
     ////////// START OF FETCH //////////
 
-    wire [31:0] pc_in, pc_plus_one;
+    wire [31:0] pc_in, pc_plus_one, fetch_INSN_in;
     
 	register program_counter(.out(address_imem), .in(pc_in), .clk(clock), .en(1'b1), .clr(reset));
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
@@ -82,11 +82,13 @@ module processor(
             T:          pc_T
     */
 
+    // nop pre-INSN latch
+    assign fetch_INSN_in = take_pc_N ? nop : q_imem;
 
     ////////// END OF FETCH //////////
     wire [31:0] fetch_PC_out, fetch_INSN_out;
     register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(1'b1), .clr(reset));
-    register fetch_INSN(.out(fetch_INSN_out), .in(q_imem), .clk(not_clock), .en(1'b1), .clr(reset));
+    register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE //////////
 
     wire [1:0] mux_ctrl_readRegB;
@@ -99,12 +101,13 @@ module processor(
     mux4 #(5) ctrl_readRegB_logic(.out(ctrl_readRegB), .select(mux_ctrl_readRegB), .in0(fetch_INSN_out[16:12]), .in1(fetch_INSN_out[26:22]), .in2(5'd0), .in3(5'b11110));
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
+    assign decode_INSN_in = take_pc_N ? nop : fetch_INSN_out;
     ////////// END OF DECODE //////////
-    wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
+    wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out, decode_INSN_in;  
     register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(1'b1), .clr(reset));
     register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(1'b1), .clr(reset));
     register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(1'b1), .clr(reset));
-    register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register decode_INSN(.out(decode_INSN_out), .in(decode_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF EXECUTE //////////
 
     /// MUX for B input
