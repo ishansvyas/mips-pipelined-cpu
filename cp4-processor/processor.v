@@ -98,8 +98,14 @@ module processor(
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
     // assign ctrl_writeReg IS DONE IN WRITEBACK STAGE
     assign ctrl_readRegA = fetch_INSN_out[21:17];
-    mux4 #(5) ctrl_readRegB_logic(.out(ctrl_readRegB), .select(mux_ctrl_readRegB), .in0(fetch_INSN_out[16:12]), .in1(fetch_INSN_out[26:22]), .in2(5'd0), .in3(5'b11110));
+    mux4 #(5) ctrl_readRegB_logic(.out(ctrl_readRegB), .select(mux_ctrl_readRegB), .in0(in_0), .in1(fetch_INSN_out[26:22]), .in2(5'd0), .in3(5'b11110));
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
+
+    // above assumes R type instruction: fetch_INSN_out[16:12]
+    wire branch_cond;
+    wire [4:0] in_0;
+    assign branch_cond = !(|(fetch_INSN_out[31:27]^5'b00110)) || !(|(fetch_INSN_out[31:27]^5'b00010));
+    assign in_0 = branch_cond ? fetch_INSN_out[26:22] : fetch_INSN_out[16:12];
 
     assign decode_INSN_in = take_pc_N ? nop : fetch_INSN_out;
     ////////// END OF DECODE //////////
@@ -111,16 +117,17 @@ module processor(
     ////////// START OF EXECUTE //////////
 
     /// MUX for B input
-    wire is_R_type;
-    assign is_R_type = !(|decode_INSN_out[31:27]);
+    wire need_reg_B;
+    assign need_reg_B = !(|decode_INSN_out[31:27]) || !(|(decode_INSN_out[31:27]^5'b00110));
     wire [31:0] sign_extend_immed_out, ALU_input_B;
     sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[16:0]));
-    assign ALU_input_B = is_R_type ? decode_B_out : sign_extend_immed_out;
+    assign ALU_input_B = need_reg_B ? decode_B_out : sign_extend_immed_out;
 
     // ALU opcode -> account for addi insn needing opcode to be 00000.
-    wire [4:0] execute_alu_opc;
+    wire [4:0] execute_alu_opc, not_I_type_opc;
     wire is_I_type = !(|(decode_INSN_out[31:27]^5'b00101)) || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000));
-    assign execute_alu_opc = is_I_type ? 5'd0 : decode_INSN_out[6:2];
+    assign not_I_type_opc = !(|(decode_INSN_out[31:27]^5'b00110)) ? 5'd1 : 5'd0; // BLT logic case
+    assign execute_alu_opc = is_I_type ? not_I_type_opc : decode_INSN_out[6:2];
 
     // ALU; NOTE: isLT, isNE are unused. OVF undefined too but that's ok?
     wire [31:0] alu_out;
@@ -141,7 +148,7 @@ module processor(
     wire [4:0] decode_out_opcode;
     wire take_pc_N, take_T, take_rd;
     assign decode_out_opcode = decode_INSN_out[31:27]; 
-    assign take_pc_N = (!(|(decode_out_opcode^5'b00010)) && (alu_isNE)) || (!(|(decode_out_opcode^5'b00110)) && (alu_isLT));
+    assign take_pc_N = (!(|(decode_out_opcode^5'b00010)) && (alu_isNE)) || (!(|(decode_out_opcode^5'b00110)) && !(alu_isLT));
     assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_B_out)));
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
