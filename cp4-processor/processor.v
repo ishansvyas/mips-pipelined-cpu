@@ -99,12 +99,14 @@ module processor(
     register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(1'b1), .clr(reset));
     register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE //////////
+    wire ctrl_readRegB_logic;
+    assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) || !(|(fetch_INSN_out[31:27]^5'b00111));
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
     // assign ctrl_writeReg IS DONE IN WRITEBACK STAGE
     assign ctrl_readRegA = !(|(fetch_INSN_out[31:27]^5'b10110)) ? 5'b11110 : fetch_INSN_out[21:17];
-    assign ctrl_readRegB = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) ? fetch_INSN_out[26:22] : fetch_INSN_out[16:12]; 
+    assign ctrl_readRegB = ctrl_readRegB_logic ? fetch_INSN_out[26:22] : fetch_INSN_out[16:12]; 
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
     // flush logic 

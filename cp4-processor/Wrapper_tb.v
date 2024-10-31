@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "blt");
+module Wrapper_tb #(parameter FILE = "memory_no_bypass");
 
 	// FileData
 	localparam DIR = "Test Files/";
