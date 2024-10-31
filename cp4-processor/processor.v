@@ -82,14 +82,6 @@ module processor(
             $rd:        decode_B_out
             T:          pc_T
     */
-    always @(posedge not_clock) begin
-        if ((!(|(decode_INSN_out[31:27]^5'b00110)))) begin
-            $display("Branch exists at %d", address_imem);
-        end
-        if ((!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE)) begin
-            $display("I jumped here at %d", address_imem);
-        end
-    end
 
     // flush logic
     assign fetch_INSN_in = (!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT & alu_isNE) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE) ? nop : q_imem;
@@ -100,7 +92,7 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
     ////////// START OF DECODE //////////
     wire ctrl_readRegB_logic;
-    assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) || !(|(fetch_INSN_out[31:27]^5'b00111));
+    assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) || !(|(fetch_INSN_out[31:27]^5'b00111)) || !(|(fetch_INSN_out[31:27]^5'b00010));
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
