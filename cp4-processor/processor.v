@@ -71,8 +71,10 @@ module processor(
     ////////// START OF FETCH //////////
 
     wire [31:0] pc_in, pc_plus_one;
+    wire stall_fetch;
+    assign stall_fetch = 1'b0;
     
-	register program_counter(.out(address_imem), .in(pc_in), .clk(not_clock), .en(1'b1), .clr(reset));
+	register program_counter(.out(address_imem), .in(pc_in), .clk(not_clock), .en(!stall_fetch), .clr(reset));
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
     
     // next PC calculation [SEE branching IN EXECUTE FOR LOGIC/DESTINATION CALCULATION]
@@ -86,10 +88,13 @@ module processor(
     // flush logic
     assign fetch_INSN_in = (!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT & alu_isNE) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE) ? nop : q_imem;
 
+    wire stall_fd;
+    assign stall_fd = 1'b0;
+
     ////////// END OF FETCH //////////
     wire [31:0] fetch_PC_out, fetch_INSN_out, fetch_INSN_in;
-    register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(1'b1), .clr(reset));
-    register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
+    register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(!stall_fd), .clr(reset));
+    register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(!stall_fd), .clr(reset));
     ////////// START OF DECODE //////////
     wire ctrl_readRegB_logic;
     assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) || !(|(fetch_INSN_out[31:27]^5'b00111)) || !(|(fetch_INSN_out[31:27]^5'b00010));
@@ -104,12 +109,15 @@ module processor(
     // flush logic 
     assign decode_INSN_in = (!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT & alu_isNE) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE) ? nop : fetch_INSN_out;
 
+    wire stall_dx;
+    assign stall_dx = 1'b0;
+
     ////////// END OF DECODE //////////
     wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out, decode_INSN_in;  
-    register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(1'b1), .clr(reset));
-    register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(1'b1), .clr(reset));
-    register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(1'b1), .clr(reset));
-    register decode_INSN(.out(decode_INSN_out), .in(decode_INSN_in), .clk(not_clock), .en(1'b1), .clr(reset));
+    register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(!stall_dx), .clr(reset));
+    register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(!stall_dx), .clr(reset));
+    register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(!stall_dx), .clr(reset));
+    register decode_INSN(.out(decode_INSN_out), .in(decode_INSN_in), .clk(not_clock), .en(!stall_dx), .clr(reset));
     ////////// START OF EXECUTE //////////
 
     /// MUX for B input
@@ -146,7 +154,7 @@ module processor(
     wire take_pc_N, take_T, take_rd;
     assign decode_out_opcode = decode_INSN_out[31:27]; 
     assign take_pc_N = (!(|(decode_out_opcode^5'b00010)) && (alu_isNE)) || (!(|(decode_out_opcode^5'b00110)) && (!alu_isLT) && alu_isNE);
-    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_B_out)));
+    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_B_out))) || (!(|(decode_out_opcode^5'b00001)));
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
     // mux assignment: {00,01,10,11} = {+1, +N+1, T, $rd}
@@ -154,24 +162,34 @@ module processor(
     assign pc_branch_control[0] = take_pc_N || take_rd;
     assign pc_branch_control[1] = take_T || take_rd;
 
+    //// MULTIPLICATION / DIVISION
+    multdiv multdiv_module(
+        .data_operandA(decode_A_out), .data_operandB(decode_B_out), 
+        .ctrl_MULT(), .ctrl_DIV(), 
+        .clock(), 
+        .data_result(), .data_exception(), .data_resultRDY());
 
+    wire stall_xm;
+    assign stall_xm = 1'b0;
 
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
-    register execute_O(.out(execute_O_out), .in(alu_out), .clk(not_clock), .en(1'b1), .clr(reset));
-    register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(1'b1), .clr(reset));
-    register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register execute_O(.out(execute_O_out), .in(alu_out), .clk(not_clock), .en(!stall_xm), .clr(reset));
+    register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(!stall_xm), .clr(reset));
+    register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(!stall_xm), .clr(reset));
     ////////// START OF MEMORY //////////
 
     assign address_dmem = execute_O_out;
     assign data = execute_B_out;
     assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
 
+    wire stall_mw;
+    assign stall_mw = 1'b0;
     ////////// END OF MEMORY //////////
     wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
-    register memory_O(.out(memory_O_out), .in(execute_O_out), .clk(not_clock), .en(1'b1), .clr(reset));
-    register memory_D(.out(memory_D_out), .in(q_dmem), .clk(not_clock), .en(1'b1), .clr(reset));
-    register memory_INSN(.out(memory_INSN_out), .in(execute_INSN_out), .clk(not_clock), .en(1'b1), .clr(reset));
+    register memory_O(.out(memory_O_out), .in(execute_O_out), .clk(not_clock), .en(!stall_mw), .clr(reset));
+    register memory_D(.out(memory_D_out), .in(q_dmem), .clk(not_clock), .en(!stall_mw), .clr(reset));
+    register memory_INSN(.out(memory_INSN_out), .in(execute_INSN_out), .clk(not_clock), .en(!stall_mw), .clr(reset));
     ////////// START OF WRITEBACK //////////
 
     wire [4:0] wb_opc;
