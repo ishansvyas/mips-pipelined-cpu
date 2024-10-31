@@ -175,9 +175,13 @@ module processor(
     // assign stall logic <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< move later?
     assign stall_logic = {5{md_stall_Qa}};
 
+    // output -> perhaps mux control is wrong?
+    wire [31:0] execute_O_in;
+    assign execute_O_in = multdiv_RDY ? multdiv_out : alu_out;
+
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
-    register execute_O(.out(execute_O_out), .in(alu_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
+    register execute_O(.out(execute_O_out), .in(execute_O_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     ////////// START OF MEMORY //////////
