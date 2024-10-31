@@ -36,11 +36,15 @@ module alu(data_operandA, data_operandB, ctrl_ALUopcode, ctrl_shiftamt, data_res
     assign mw2 = isLTselect[0] ? y1[31] : 1'b1;
     assign isLessThan = isLTselect[1] ? mw2 : mw1;
 
+    /*
     or isNEl1(ne1, y1[0], y1[1], y1[2], y1[3], y1[4], y1[5], y1[6], y1[7]);
     or isNEl2(ne2, y1[8], y1[9], y1[10], y1[11], y1[12], y1[13], y1[14], y1[15]);
     or isNEl3(ne3, y1[16], y1[17], y1[18], y1[19], y1[20], y1[21], y1[22], y1[23]);
     or isNEl4(ne4, y1[24], y1[25], y1[26], y1[27], y1[28], y1[29], y1[30], y1[31]);
     or isNE(isNotEqual, ne1, ne2, ne3, ne4);
+    */
+    // CHANGED FOR CPU
+    assign isNotEqual = |(data_operandA ^ data_operandB);
 
     // calculate ovf bit -> could have used Shannon's and muxes but decided to just hard wire 
     wire ovf1, ovf2, not_A31, not_B31, not_res;
