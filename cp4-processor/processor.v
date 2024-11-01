@@ -152,8 +152,8 @@ module processor(
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
     // mux assignment: {00,01,10,11} = {+1, +N+1, T, $rd}
-    assign pc_branch_control[0] = take_pc_N || take_rd;
-    assign pc_branch_control[1] = take_T || take_rd;
+    assign pc_branch_control[0] = take_pc_N || take_T;
+    assign pc_branch_control[1] = take_rd || take_T;
 
     //// MULTIPLICATION / DIVISION ---------------------------------------------- COMPLETELY WRONG
     wire [31:0] multdiv_out;
@@ -184,9 +184,12 @@ module processor(
     // assign stall logic
     assign stall_logic = {5{md_stall_Qa}};
 
-    // output -> perhaps mux control is wrong?
+    // output selector
     wire [31:0] execute_O_in;
-    assign execute_O_in = (is_mult || is_div) ? multdiv_out : alu_out; //<---- never chooses multdiv out
+    wire [1:0] execute_output_selector;
+    assign execute_output_selector[0] = (is_mult || is_div);
+    assign execute_output_selector[1] = !(|(decode_out_opcode^5'b00011));
+    mux4 execute_output_select(.out(execute_O_in), .select(execute_output_selector), .in0(alu_out), .in1(multdiv_out), .in2(decode_PC_out), .in3(32'b0));
 
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;

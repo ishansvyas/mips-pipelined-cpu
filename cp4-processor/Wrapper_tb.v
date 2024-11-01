@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "multdiv_slow");
+module Wrapper_tb #(parameter FILE = "jal");
 
 	// FileData
 	localparam DIR = "Test Files/";
