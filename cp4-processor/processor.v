@@ -158,18 +158,25 @@ module processor(
     //// MULTIPLICATION / DIVISION ---------------------------------------------- COMPLETELY WRONG
     wire [31:0] multdiv_out;
     wire is_mult, is_div, multdiv_exception, multdiv_RDY;
-    assign is_mult = (|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00110));
-    assign is_div = (|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00111));
+    assign is_mult = !(|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00110));
+    assign is_div = !(|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00111));
+
+    // positive edge-triggered pulse generator 
+    wire ctrl_MULT, ctrl_DIV, is_mult_delayed, is_div_delayed;
+    dffe_ref ctrl_MULT_delayed(.q(is_mult_delayed), .d(is_mult), .clk(not_clock), .en(1'b1), .clr(reset));
+    assign ctrl_MULT = !is_mult_delayed && is_mult;
+    dffe_ref ctrl_DIV_delayed(.q(is_div_delayed), .d(is_div), .clk(not_clock), .en(1'b1), .clr(reset));
+    assign ctrl_DIV = !is_div_delayed && is_div;
 
     multdiv multdiv_module(
         .data_operandA(decode_A_out), .data_operandB(decode_B_out), 
-        .ctrl_MULT(is_mult), .ctrl_DIV(is_div), 
+        .ctrl_MULT(ctrl_MULT), .ctrl_DIV(ctrl_DIV), 
         .clock(not_clock), 
         .data_result(multdiv_out), .data_exception(multdiv_exception), .data_resultRDY(multdiv_RDY));
     
-    //gated SR latch (set = is_mult OR is_div) (reset = data_resultRDY)
+    //gated SR latch (set = ctrl_MULT OR ctrl_DIV) (reset = data_resultRDY)
     wire md_stall_Qa, Qb, multdiv_S, multdiv_R;
-    assign multdiv_S = ((is_mult | is_div) && not_clock);
+    assign multdiv_S = ((ctrl_MULT | ctrl_DIV) && not_clock);
     assign multdiv_R = ((multdiv_RDY && not_clock) || reset);
     nor sr_multdiv1(md_stall_Qa, multdiv_R, Qb);
     nor sr_multdiv2(Qb, multdiv_S, md_stall_Qa);
