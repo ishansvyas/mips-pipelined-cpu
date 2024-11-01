@@ -72,6 +72,7 @@ module processor(
 
     wire [31:0] pc_in, pc_plus_one;
     wire [4:0] stall_logic;
+    wire [1:0] pc_branch_control;
     
 	register program_counter(.out(address_imem), .in(pc_in), .clk(not_clock), .en(!stall_logic[0]), .clr(reset));
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
@@ -151,11 +152,10 @@ module processor(
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
     // mux assignment: {00,01,10,11} = {+1, +N+1, T, $rd}
-    wire [1:0] pc_branch_control;
     assign pc_branch_control[0] = take_pc_N || take_rd;
     assign pc_branch_control[1] = take_T || take_rd;
 
-    //// MULTIPLICATION / DIVISION
+    //// MULTIPLICATION / DIVISION ---------------------------------------------- COMPLETELY WRONG
     wire [31:0] multdiv_out;
     wire is_mult, is_div, multdiv_exception, multdiv_RDY;
     assign is_mult = (|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00110));
@@ -167,17 +167,19 @@ module processor(
         .clock(not_clock), 
         .data_result(multdiv_out), .data_exception(multdiv_exception), .data_resultRDY(multdiv_RDY));
     
-    //SR latch (set = is_mult OR is_div) (reset = data_resultRDY)
-    wire md_stall_Qa, Qb;
-    nand sr_multdiv1(md_stall_Qa, multdiv_RDY, Qb);
-    nand sr_multdiv2(Qb, (is_mult | is_div), md_stall_Qa);
+    //gated SR latch (set = is_mult OR is_div) (reset = data_resultRDY)
+    wire md_stall_Qa, Qb, multdiv_S, multdiv_R;
+    assign multdiv_S = ((is_mult | is_div) && not_clock);
+    assign multdiv_R = ((multdiv_RDY && not_clock) || reset);
+    nor sr_multdiv1(md_stall_Qa, multdiv_R, Qb);
+    nor sr_multdiv2(Qb, multdiv_S, md_stall_Qa);
 
-    // assign stall logic <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< move later?
+    // assign stall logic
     assign stall_logic = {5{md_stall_Qa}};
 
     // output -> perhaps mux control is wrong?
     wire [31:0] execute_O_in;
-    assign execute_O_in = multdiv_RDY ? multdiv_out : alu_out;
+    assign execute_O_in = (is_mult || is_div) ? multdiv_out : alu_out; //<---- never chooses multdiv out
 
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;

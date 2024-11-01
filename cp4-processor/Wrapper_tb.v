@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "bne");
+module Wrapper_tb #(parameter FILE = "multdiv_slow");
 
 	// FileData
 	localparam DIR = "Test Files/";
