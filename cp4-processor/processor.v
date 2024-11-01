@@ -94,7 +94,9 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(!stall_logic[1]), .clr(reset));
     ////////// START OF DECODE //////////
     wire ctrl_readRegB_logic;
-    assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110) || !(|(fetch_INSN_out[31:27]^5'b00010))) || !(|(fetch_INSN_out[31:27]^5'b00111)) || !(|(fetch_INSN_out[31:27]^5'b00010));
+    assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110)) || !(|(fetch_INSN_out[31:27]^5'b00010))
+            || !(|(fetch_INSN_out[31:27]^5'b00111)) || !(|(fetch_INSN_out[31:27]^5'b00010))
+            || !(|(fetch_INSN_out[31:27]^5'b00100));
 
     /* ONLY INTERRACT WITH REGFILE VIA I/O OF PROCESSOR, NOT BY DIRECT INSTANTIAION */
     // assign ctrl_writeEnable IS DONE IN WRITEBACK STAGE
