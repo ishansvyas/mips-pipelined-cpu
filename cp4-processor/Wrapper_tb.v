@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "jr");
+module Wrapper_tb #(parameter FILE = "bex_setx");
 
 	// FileData
 	localparam DIR = "Test Files/";
