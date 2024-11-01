@@ -150,7 +150,7 @@ module processor(
     wire take_pc_N, take_T, take_rd;
     assign decode_out_opcode = decode_INSN_out[31:27]; 
     assign take_pc_N = (!(|(decode_out_opcode^5'b00010)) && (alu_isNE)) || (!(|(decode_out_opcode^5'b00110)) && (!alu_isLT) && alu_isNE);
-    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_B_out))) || (!(|(decode_out_opcode^5'b00001)));
+    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_A_out))) || (!(|(decode_out_opcode^5'b00001)));
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
     // mux assignment: {00,01,10,11} = {+1, +N+1, T, $rd}
@@ -215,8 +215,10 @@ module processor(
     assign wb_opc = memory_INSN_out[31:27];
     assign ctrl_writeEnable =   !(|(wb_opc^5'b00000) || !(|memory_INSN_out)) || !(|(wb_opc^5'b00101)) || !(|(wb_opc^5'b01000)) 
                                 || !(|(wb_opc^5'b00011)) || !(|(wb_opc^5'b10101));
-    assign data_writeReg = |(wb_opc^5'b01000) ? memory_O_out : memory_D_out;
+    mux4 data_writeReg_mux(.out(data_writeReg), .select(data_writeReg_controller),
+            .in0(memory_O_out), .in1(memory_D_out), .in2(setx_T_extended), .in3(32'd0));    
     mux4 #(5) ctrl_writeReg_mux(.out(ctrl_writeReg), .select(ctrl_writeReg_controller), .in0(memory_INSN_out[26:22]), .in1(5'b11110), .in2(5'b11111), .in3(5'd0));
+
 
     // ctrls for ctrl_writeReg
     wire ctrl_writeReg_rstatus, ctrl_writeReg_r31;
@@ -224,6 +226,15 @@ module processor(
     assign ctrl_writeReg_rstatus = !(|(wb_opc^5'b10101)); // STILL NEED TO INCLUDE OVERFLOW CONDITIONS
     assign ctrl_writeReg_r31 = !(|(wb_opc^5'b00011)); // JAL
     assign ctrl_writeReg_controller = {ctrl_writeReg_r31, ctrl_writeReg_rstatus};
+
+    // ctrls for data_writeReg
+    wire [1:0] data_writeReg_controller;
+    wire [31:0] setx_T_extended;
+    assign data_writeReg_controller[0] = !(|(wb_opc^5'b01000));
+    assign data_writeReg_controller[1] = !(|(wb_opc^5'b10101));
+    assign setx_T_extended[26:0] = memory_INSN_out[26:0];
+    assign setx_T_extended[31:27] = {5{memory_INSN_out[26]}};
+ 
 	/* END CODE */
 
 endmodule
