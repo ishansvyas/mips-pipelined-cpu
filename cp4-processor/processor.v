@@ -186,12 +186,33 @@ module processor(
     // assign stall logic
     assign stall_logic = {5{md_stall_Qa}};
 
-    // output selector
+    // 189 -> 215 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // \\  // \\ output selector
     wire [31:0] execute_O_in;
     wire [1:0] execute_output_selector;
-    assign execute_output_selector[0] = (is_mult || is_div);
-    assign execute_output_selector[1] = !(|(decode_out_opcode^5'b00011));
-    mux4 execute_output_select(.out(execute_O_in), .select(execute_output_selector), .in0(alu_out), .in1(multdiv_out), .in2(decode_PC_out), .in3(32'b0));
+    wire execute_overflow;
+    assign execute_overflow = (alu_ovf) || (multdiv_exception);
+    assign execute_output_selector[0] = (is_mult || is_div) || execute_overflow;
+    assign execute_output_selector[1] = !(|(decode_out_opcode^5'b00011)) || execute_overflow;
+
+    // mux8 for rstatus overwrite
+    wire ovw_add, ovw_addi, ovw_sub, ovw_mul, ovw_div; 
+    assign ovw_add = !(|(decode_INSN_out[31:27]^5'b00000)) && !(|(decode_INSN_out[6:2]^5'b00000));
+    assign ovw_addi = !(|(decode_INSN_out[31:27]^5'b00101));
+    assign ovw_sub = !(|(decode_INSN_out[31:27]^5'b00000)) && !(|(decode_INSN_out[6:2]^5'b00001));
+    assign ovw_mul = !(|(decode_INSN_out[31:27]^5'b00000)) && !(|(decode_INSN_out[6:2]^5'b00110));
+    assign ovw_div = !(|(decode_INSN_out[31:27]^5'b00000)) && !(|(decode_INSN_out[6:2]^5'b00111));
+
+    // use high impedance
+    wire [26:0] setx_T; 
+    assign setx_T = ovw_add ? {27'd1} : {27{1'bZ}}; 
+    assign setx_T = ovw_addi ? {27'd2} : {27{1'bZ}}; 
+    assign setx_T = ovw_sub ? {27'd3} : {27{1'bZ}}; 
+    assign setx_T = ovw_mul ? {27'd4} : {27{1'bZ}}; 
+    assign setx_T = ovw_div ? {27'd5} : {27{1'bZ}}; 
+
+    // {00,01,10,11} = {alu,multdiv,PC(jal),setx override}
+    mux4 execute_output_select(.out(execute_O_in), .select(execute_output_selector), .in0(alu_out), .in1(multdiv_out), .in2(decode_PC_out), .in3({5'b10101,setx_T}));
 
     ////////// END OF EXECUTE //////////
     wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
