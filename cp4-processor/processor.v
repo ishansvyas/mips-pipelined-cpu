@@ -86,13 +86,17 @@ module processor(
     */
 
     // flush logic
-    assign fetch_INSN_in = (!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT & alu_isNE) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE) ? nop : q_imem;
+    assign fetch_INSN_in = |pc_branch_control ? nop : q_imem;
 
     ////////// END OF FETCH //////////
-    wire [31:0] fetch_PC_out, fetch_INSN_out, fetch_INSN_in;
+    wire [31:0] fetch_PC_out, fetch_INSN_out_raw, fetch_INSN_in;
     register fetch_PC(.out(fetch_PC_out), .in(pc_in), .clk(not_clock), .en(!stall_logic[1]), .clr(reset));
-    register fetch_INSN(.out(fetch_INSN_out), .in(fetch_INSN_in), .clk(not_clock), .en(!stall_logic[1]), .clr(reset));
+    register fetch_INSN(.out(fetch_INSN_out_raw), .in(fetch_INSN_in), .clk(not_clock), .en(!stall_logic[1]), .clr(reset));
     ////////// START OF DECODE //////////
+    // flush logic 
+    wire [31:0] fetch_INSN_out;
+    assign fetch_INSN_out = |pc_branch_control ? nop : fetch_INSN_out_raw;
+    
     wire ctrl_readRegB_logic;
     assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110)) || !(|(fetch_INSN_out[31:27]^5'b00010))
             || !(|(fetch_INSN_out[31:27]^5'b00111)) || !(|(fetch_INSN_out[31:27]^5'b00010))
@@ -105,15 +109,12 @@ module processor(
     assign ctrl_readRegB = ctrl_readRegB_logic ? fetch_INSN_out[26:22] : fetch_INSN_out[16:12]; 
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
-    // flush logic 
-    assign decode_INSN_in = (!(|(decode_INSN_out[31:27]^5'b00110)) & !alu_isLT & alu_isNE) || (!(|(decode_INSN_out[31:27]^5'b00010)) & alu_isNE) ? nop : fetch_INSN_out;
-
     ////////// END OF DECODE //////////
     wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out, decode_INSN_in;  
     register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
-    register decode_INSN(.out(decode_INSN_out), .in(decode_INSN_in), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
+    register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     ////////// START OF EXECUTE //////////
 
     /// MUX for B input
@@ -157,7 +158,7 @@ module processor(
     assign pc_branch_control[0] = take_pc_N || take_T;
     assign pc_branch_control[1] = take_rd || take_T;
 
-    //// MULTIPLICATION / DIVISION ---------------------------------------------- COMPLETELY WRONG
+    //// MULTIPLICATION / DIVISION
     wire [31:0] multdiv_out;
     wire is_mult, is_div, multdiv_exception, multdiv_RDY;
     assign is_mult = !(|decode_out_opcode) && !(|(decode_INSN_out[6:2]^5'b00110));
@@ -186,7 +187,6 @@ module processor(
     // assign stall logic
     assign stall_logic = {5{md_stall_Qa}};
 
-    // 189 -> 215 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // \\  // \\ output selector
     wire [31:0] execute_O_in;
     wire [1:0] execute_output_selector;

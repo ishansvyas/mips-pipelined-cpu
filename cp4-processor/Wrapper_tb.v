@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "alu_except");
+module Wrapper_tb #(parameter FILE = "complete_ctrl");
 
 	// FileData
 	localparam DIR = "Test Files/";
