@@ -191,7 +191,8 @@ module processor(
     wire [31:0] execute_O_in;
     wire [1:0] execute_output_selector;
     wire execute_overflow;
-    assign execute_overflow = (alu_ovf) || (multdiv_exception);
+    assign execute_overflow = (alu_ovf && (!(|(decode_out_opcode^5'b00000)) || !(|(decode_out_opcode^5'b00101)))) ||
+        (multdiv_exception && !(|(decode_out_opcode^5'b00000)) && (!(|(decode_INSN_out[6:2]^5'b00110)) || !(|(decode_INSN_out[6:2]^5'b00111))));
     assign execute_output_selector[0] = (is_mult || is_div) || execute_overflow;
     assign execute_output_selector[1] = !(|(decode_out_opcode^5'b00011)) || execute_overflow;
 
@@ -204,21 +205,22 @@ module processor(
     assign ovw_div = !(|(decode_INSN_out[31:27]^5'b00000)) && !(|(decode_INSN_out[6:2]^5'b00111));
 
     // use high impedance
-    wire [26:0] setx_T; 
-    assign setx_T = ovw_add ? {27'd1} : {27{1'bZ}}; 
-    assign setx_T = ovw_addi ? {27'd2} : {27{1'bZ}}; 
-    assign setx_T = ovw_sub ? {27'd3} : {27{1'bZ}}; 
-    assign setx_T = ovw_mul ? {27'd4} : {27{1'bZ}}; 
-    assign setx_T = ovw_div ? {27'd5} : {27{1'bZ}}; 
+    wire [26:0] setx_T_insn; 
+    assign setx_T_insn = ovw_add ? {27'd1} : {27{1'bZ}}; 
+    assign setx_T_insn = ovw_addi ? {27'd2} : {27{1'bZ}}; 
+    assign setx_T_insn = ovw_sub ? {27'd3} : {27{1'bZ}}; 
+    assign setx_T_insn = ovw_mul ? {27'd4} : {27{1'bZ}}; 
+    assign setx_T_insn = ovw_div ? {27'd5} : {27{1'bZ}}; 
 
     // {00,01,10,11} = {alu,multdiv,PC(jal),setx override}
-    mux4 execute_output_select(.out(execute_O_in), .select(execute_output_selector), .in0(alu_out), .in1(multdiv_out), .in2(decode_PC_out), .in3({5'b10101,setx_T}));
+    mux4 execute_output_select(.out(execute_O_in), .select(execute_output_selector), .in0(alu_out), .in1(multdiv_out), .in2(decode_PC_out), .in3(32'd0));
 
     ////////// END OF EXECUTE //////////
-    wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out;
+    wire [31:0] execute_pc_out, execute_O_out, execute_B_out, execute_INSN_out, execute_INSN_in;
+    assign execute_INSN_in = execute_overflow ? {5'b10101,setx_T_insn} : decode_INSN_out;
     register execute_O(.out(execute_O_out), .in(execute_O_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
-    register execute_INSN(.out(execute_INSN_out), .in(decode_INSN_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
+    register execute_INSN(.out(execute_INSN_out), .in(execute_INSN_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     ////////// START OF MEMORY //////////
 
     assign address_dmem = execute_O_out;
@@ -244,7 +246,7 @@ module processor(
     // ctrls for ctrl_writeReg
     wire ctrl_writeReg_rstatus, ctrl_writeReg_r31;
     wire [1:0] ctrl_writeReg_controller; 
-    assign ctrl_writeReg_rstatus = !(|(wb_opc^5'b10101)); // STILL NEED TO INCLUDE OVERFLOW CONDITIONS
+    assign ctrl_writeReg_rstatus = !(|(wb_opc^5'b10101)) || (execute_overflow && !(|(wb_opc^5'b00000))); // setx,ovf
     assign ctrl_writeReg_r31 = !(|(wb_opc^5'b00011)); // JAL
     assign ctrl_writeReg_controller = {ctrl_writeReg_r31, ctrl_writeReg_rstatus};
 
