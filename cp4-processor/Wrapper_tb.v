@@ -33,7 +33,7 @@
  *
  **/
 
-module Wrapper_tb #(parameter FILE = "complete_ctrl");
+module Wrapper_tb #(parameter FILE = "");
 
 	// FileData
 	localparam DIR = "Test Files/";
