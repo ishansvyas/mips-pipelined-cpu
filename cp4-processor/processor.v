@@ -177,16 +177,13 @@ module processor(
         .clock(not_clock), 
         .data_result(multdiv_out), .data_exception(multdiv_exception), .data_resultRDY(multdiv_RDY));
     
-    //gated SR latch (set = ctrl_MULT OR ctrl_DIV) (reset = data_resultRDY)
-    wire md_stall_Qa, Qb, multdiv_S, multdiv_R;
-    assign multdiv_S = ((ctrl_MULT | ctrl_DIV) && not_clock);
-    assign multdiv_R = ((multdiv_RDY && not_clock) || reset);
-    nor sr_multdiv1(md_stall_Qa, multdiv_R, Qb);
-    nor sr_multdiv2(Qb, multdiv_S, md_stall_Qa);
-
+    // stall for when (is_mult OR is_div) AND (not ready)
+    wire multdiv_stall;
+    assign multdiv_stall = (is_mult || is_div) && (!multdiv_RDY);
     // assign stall logic
-    assign stall_logic = {5{md_stall_Qa}};
-
+    assign stall_logic = {5{multdiv_stall}};
+    
+    
     // \\  // \\ output selector
     wire [31:0] execute_O_in;
     wire [1:0] execute_output_selector;
