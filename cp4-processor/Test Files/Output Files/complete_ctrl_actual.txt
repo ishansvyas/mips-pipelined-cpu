@@ -69,7 +69,6 @@ Cycle 236: Wrote 0 into register 23
 Cycle 240: Wrote 0 into register 10
 Cycle 241: Wrote 0 into register 20
 Cycle 242: Wrote 0 into register 21
-Cycle 301: Wrote 1 into register 30
 ============== Testing Mode ==============
 Reg  0:           0
 Reg  1:           4
@@ -101,5 +100,5 @@ Reg 26:           0
 Reg 27:           0
 Reg 28:           0
 Reg 29:           0
-Reg 30:           1
+Reg 30:          10
 Reg 31:         252

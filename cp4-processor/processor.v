@@ -132,13 +132,13 @@ module processor(
 
     // bypass 1: W->X A  AND  bypass 4: M->X A
     wire [31:0] ALU_input_A;
-    assign ALU_input_A = (!(|decode_INSN_out[31:27]) && !(|memory_INSN_out[31:27]) && !(|(decode_INSN_out[21:17]^memory_INSN_out[26:22]))) ? memory_O_out 
-        : ((!(|decode_INSN_out[31:27]) && !(|execute_INSN_out[31:27]) && !(|(decode_INSN_out[21:17]^execute_INSN_out[26:22]))) ? execute_O_out : decode_A_out);
+    assign ALU_input_A = (!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22]) ? memory_O_out 
+        : ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_A_out);
 
     // bypass 2: W->X B  AND  bypass 5: M->X B
     assign ALU_input_B = use_sign_extend_execute ? sign_extend_immed_out :
-        ((!(|decode_INSN_out[31:27]) && !(|memory_INSN_out[31:27]) && !(|(decode_INSN_out[16:12]^memory_INSN_out[26:22]))) ? memory_O_out 
-        : ((!(|decode_INSN_out[31:27]) && !(|execute_INSN_out[31:27]) && !(|(decode_INSN_out[16:12]^execute_INSN_out[26:22]))) ? execute_O_out : decode_B_out));
+        ((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22]) ? memory_O_out 
+        : ((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_B_out));
 
 
     // ALU
@@ -254,7 +254,6 @@ module processor(
             .in0(memory_O_out), .in1(memory_D_out), .in2(setx_T_extended), .in3(32'd0));    
     mux4 #(5) ctrl_writeReg_mux(.out(ctrl_writeReg), .select(ctrl_writeReg_controller), .in0(memory_INSN_out[26:22]), .in1(5'b11110), .in2(5'b11111), .in3(5'd0));
 
-
     // ctrls for ctrl_writeReg
     wire ctrl_writeReg_rstatus, ctrl_writeReg_r31;
     wire [1:0] ctrl_writeReg_controller; 
@@ -280,7 +279,7 @@ module processor(
     assign stall_logic[3] = multdiv_stall;
     assign stall_logic[4] = multdiv_stall;
 
-    // maximum stalling condition ------------------------------------------------ FIX!!!!!
+    // maximum stalling condition ------------------------------------------------ 
     wire lw_stall;
     assign lw_stall = (!(|(fetch_INSN_out[21:17]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
                 || (!(|(fetch_INSN_out[16:12]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)));
