@@ -235,7 +235,8 @@ module processor(
     assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
 
     // bypass 3: W->M B [logic: doing SW AND need to writeback reg value]
-    assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22]))) ? memory_O_out : execute_B_out; 
+    assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22])))
+        ? ((|(memory_INSN_out[31:27]^5'b01000)) ? memory_O_out : memory_D_out) : execute_B_out; 
 
     ////////// END OF MEMORY //////////
     wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
