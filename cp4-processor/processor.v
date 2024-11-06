@@ -122,7 +122,6 @@ module processor(
     assign use_sign_extend_execute = !(|(decode_INSN_out[31:27]^5'b00101)) || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000));
     wire [31:0] sign_extend_immed_out, ALU_input_B;
     sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[16:0]));
-    assign ALU_input_B = use_sign_extend_execute ? sign_extend_immed_out : decode_B_out;
 
     // ALU opcode -> account for addi insn needing opcode to be 00000.
     wire [4:0] execute_alu_opc;
@@ -131,11 +130,22 @@ module processor(
     assign alu_opc_is_diff[1] = !(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)); // is branch
     mux4 #(5) execute_alu_opc_mux(.out(execute_alu_opc), .select(alu_opc_is_diff), .in0(decode_INSN_out[6:2]), .in1(5'b00000), .in2(5'b00001), .in3(5'b00000));
 
+    // bypass 1: W->X A  AND  bypass 4: M->X A
+    wire [31:0] ALU_input_A;
+    assign ALU_input_A = (!(|decode_INSN_out[31:27]) && !(|memory_INSN_out[31:27]) && !(|(decode_INSN_out[21:17]^memory_INSN_out[26:22]))) ? memory_O_out 
+        : ((!(|decode_INSN_out[31:27]) && !(|execute_INSN_out[31:27]) && !(|(decode_INSN_out[21:17]^execute_INSN_out[26:22]))) ? execute_O_out : decode_A_out);
+
+    // bypass 2: W->X B  AND  bypass 5: M->X B
+    assign ALU_input_B = use_sign_extend_execute ? sign_extend_immed_out :
+        ((!(|decode_INSN_out[31:27]) && !(|memory_INSN_out[31:27]) && !(|(decode_INSN_out[16:12]^memory_INSN_out[26:22]))) ? memory_O_out 
+        : ((!(|decode_INSN_out[31:27]) && !(|execute_INSN_out[31:27]) && !(|(decode_INSN_out[16:12]^execute_INSN_out[26:22]))) ? execute_O_out : decode_B_out));
+
+
     // ALU
     wire [31:0] alu_out;
     wire alu_isNE, alu_isLT, alu_ovf;
     alu execute_alu(
-            .data_operandA(decode_A_out), .data_operandB(ALU_input_B),
+            .data_operandA(ALU_input_A), .data_operandB(ALU_input_B),
             .ctrl_ALUopcode(execute_alu_opc), .ctrl_shiftamt(decode_INSN_out[11:7]),
             .data_result(alu_out),
             .isNotEqual(alu_isNE), .isLessThan(alu_isLT), .overflow(alu_ovf));    
@@ -180,8 +190,7 @@ module processor(
     // stall for when (is_mult OR is_div) AND (not ready)
     wire multdiv_stall;
     assign multdiv_stall = (is_mult || is_div) && (!multdiv_RDY);
-    // assign stall logic
-    assign stall_logic = {5{multdiv_stall}};
+    // stall logic assigned at bottom
     
     
     // \\  // \\ output selector
@@ -223,8 +232,10 @@ module processor(
     ////////// START OF MEMORY //////////
     
     assign address_dmem = execute_O_out;
-    assign data = execute_B_out;
     assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
+
+    // bypass 3: W->M B [logic: doing SW AND need to writeback reg value]
+    assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22]))) ? memory_O_out : execute_B_out; 
 
     ////////// END OF MEMORY //////////
     wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
@@ -259,6 +270,21 @@ module processor(
     assign setx_T_extended[26:0] = memory_INSN_out[26:0];
     assign setx_T_extended[31:27] = {5{memory_INSN_out[26]}};
  
+    ////////// END OF WRITEBACK //////////
+    ////////// START OF STALL LOGIC AND HAZARD DETECTION //////////
+
+    // stall logic == 1 WHEN NEED TO STALL; 
+    assign stall_logic[0] = multdiv_stall || lw_stall;
+    assign stall_logic[1] = multdiv_stall || lw_stall;
+    assign stall_logic[2] = multdiv_stall;
+    assign stall_logic[3] = multdiv_stall;
+    assign stall_logic[4] = multdiv_stall;
+
+    // maximum stalling condition ------------------------------------------------ FIX!!!!!
+    wire lw_stall;
+    assign lw_stall = (!(|(fetch_INSN_out[21:17]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
+                || (!(|(fetch_INSN_out[16:12]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)));
+
 	/* END CODE */
 
 endmodule
