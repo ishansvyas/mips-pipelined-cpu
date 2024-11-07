@@ -123,7 +123,9 @@ module processor(
     assign execute_true_A = 
         ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])) 
         ? data_writeReg 
-        : ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_A_out);
+        : (((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]))
+            ? execute_O_out : 
+            ((!(|(decode_INSN_out[31:27]^5'b10110)) && !(|(execute_INSN_out[31:27]^5'b10101))) ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : decode_A_out));
 
     // bypass 2: W->X B  AND  bypass 5: M->X B
     assign execute_true_B = use_sign_extend_execute ? sign_extend_immed_out :
