@@ -1,10 +1,17 @@
+Cycle   9: Wrote 32767 into register 1
+Cycle  10: Wrote 2147418112 into register 1
+Cycle  11: Wrote 98302 into register 1
+Cycle  12: Wrote 2 into register 2
+Cycle  13: Wrote 1 into register 3
+Cycle  14: Wrote 98303 into register 5
+Cycle  15: Wrote 2 into register 4
 ============== Testing Mode ==============
 Reg  0:           0
-Reg  1:           0
-Reg  2:           0
-Reg  3:           0
-Reg  4:           0
-Reg  5:           0
+Reg  1:       98302
+Reg  2:           2
+Reg  3:           1
+Reg  4:           2
+Reg  5:       98303
 Reg  6:           0
 Reg  7:           0
 Reg  8:           0

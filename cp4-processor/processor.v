@@ -121,7 +121,7 @@ module processor(
     wire [31:0] execute_true_A, execute_true_B;
     // bypass 1: W->X A  AND  bypass 4: M->X A
     assign execute_true_A = 
-        ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])) 
+        ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable)) 
         ? data_writeReg 
         : (((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]))
             ? execute_O_out : 
@@ -241,13 +241,14 @@ module processor(
     register execute_INSN(.out(execute_INSN_out), .in(execute_INSN_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     dffe_ref execute_overflow_dff_ex(.q(execute_overflow_ex), .d(execute_overflow), .clk(not_clock), .en(!stall_logic[4]), .clr(reset));
     ////////// START OF MEMORY //////////
-    
+        
     assign address_dmem = execute_O_out;
     assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
 
     // bypass 3: W->M B [logic: doing SW AND need to writeback reg value]
     assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22])))
         ? ((|(memory_INSN_out[31:27]^5'b01000)) ? data_writeReg : memory_D_out) : execute_B_out; 
+    
 
     ////////// END OF MEMORY //////////
     wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
