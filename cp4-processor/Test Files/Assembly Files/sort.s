@@ -3,7 +3,7 @@ nop             # Author: Jack Proudfoot
 nop             
 nop
 init:
-addi $sp, $zero, 256        # $sp = 256
+addi $sp, $zero, 256        # $sp = 256 && sp = r29
 addi $27, $zero, 3840       # $27 = 3840 address for bottom of heap
 
 addi $t0, $zero, 50
@@ -16,14 +16,14 @@ sw $t1, 2($t0)
 addi $t1, $zero, 2
 sw $t1, 3($t0)
 
-add $a0, $zero, $t0
+add $a0, $zero, $t0         # a0 = r4 && t0 = r8
 j main
 
 malloc:                     # $a0 = number of words to allocate
 sub $27, $27, $a0           # allocate $a0 words of memory
 blt $sp, $27, mallocep      # check for heap overflow
 mallocep:
-add $v0, $27, $zero
+add $v0, $27, $zero         # v0 = r2
 jr $ra
 
 buildlist:                  # $a0 = memory address of input data
@@ -116,7 +116,7 @@ lw $ra, 0($sp)
 jr $ra
 
 
-main:
+main:                       # STARTS AT ADDR = 78
 jal buildlist
 add $t0, $v0, $zero         # $t0 = head of list
 
