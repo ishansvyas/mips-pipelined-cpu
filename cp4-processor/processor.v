@@ -134,7 +134,6 @@ module processor(
         ? data_writeReg 
         : ((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_B_out));
 
-
     /// MUX for B input
     wire use_sign_extend_execute;
     assign use_sign_extend_execute = !(|(decode_INSN_out[31:27]^5'b00101)) || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000));
