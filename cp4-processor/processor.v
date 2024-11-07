@@ -94,7 +94,7 @@ module processor(
     register fetch_INSN(.out(fetch_INSN_out_raw), .in(fetch_INSN_in), .clk(not_clock), .en(!stall_logic[1]), .clr(reset));
     ////////// START OF DECODE //////////
     // flush logic 
-    wire [31:0] fetch_INSN_out;
+    wire [31:0] fetch_INSN_out; // does this break my code? ans: yes ( || stall_logic[1])
     assign fetch_INSN_out = |pc_branch_control ? nop : fetch_INSN_out_raw;
     
     wire ctrl_readRegB_logic;
@@ -117,10 +117,26 @@ module processor(
     register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     ////////// START OF EXECUTE //////////
 
+    // true A, true B
+    wire [31:0] execute_true_A, execute_true_B;
+    // bypass 1: W->X A  AND  bypass 4: M->X A
+    assign execute_true_A = 
+        ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])) 
+        ? data_writeReg 
+        : ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_A_out);
+
+    // bypass 2: W->X B  AND  bypass 5: M->X B
+    assign execute_true_B = use_sign_extend_execute ? sign_extend_immed_out :
+        (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
+            || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
+        ? data_writeReg 
+        : ((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_B_out));
+
+
     /// MUX for B input
     wire use_sign_extend_execute;
     assign use_sign_extend_execute = !(|(decode_INSN_out[31:27]^5'b00101)) || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000));
-    wire [31:0] sign_extend_immed_out, ALU_input_B;
+    wire [31:0] sign_extend_immed_out;
     sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[16:0]));
 
     // ALU opcode -> account for addi insn needing opcode to be 00000.
@@ -130,22 +146,11 @@ module processor(
     assign alu_opc_is_diff[1] = !(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)); // is branch
     mux4 #(5) execute_alu_opc_mux(.out(execute_alu_opc), .select(alu_opc_is_diff), .in0(decode_INSN_out[6:2]), .in1(5'b00000), .in2(5'b00001), .in3(5'b00000));
 
-    // bypass 1: W->X A  AND  bypass 4: M->X A
-    wire [31:0] ALU_input_A;
-    assign ALU_input_A = (!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22]) ? memory_O_out 
-        : ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_A_out);
-
-    // bypass 2: W->X B  AND  bypass 5: M->X B
-    assign ALU_input_B = use_sign_extend_execute ? sign_extend_immed_out :
-        ((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22]) ? memory_O_out 
-        : ((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_B_out));
-
-
     // ALU
     wire [31:0] alu_out;
     wire alu_isNE, alu_isLT, alu_ovf;
     alu execute_alu(
-            .data_operandA(ALU_input_A), .data_operandB(ALU_input_B),
+            .data_operandA(execute_true_A), .data_operandB(execute_true_B),
             .ctrl_ALUopcode(execute_alu_opc), .ctrl_shiftamt(decode_INSN_out[11:7]),
             .data_result(alu_out),
             .isNotEqual(alu_isNE), .isLessThan(alu_isLT), .overflow(alu_ovf));    
@@ -161,7 +166,7 @@ module processor(
     wire take_pc_N, take_T, take_rd;
     assign decode_out_opcode = decode_INSN_out[31:27]; 
     assign take_pc_N = (!(|(decode_out_opcode^5'b00010)) && (alu_isNE)) || (!(|(decode_out_opcode^5'b00110)) && (!alu_isLT) && alu_isNE);
-    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(decode_A_out))) || (!(|(decode_out_opcode^5'b00001)));
+    assign take_T = (!(|(decode_out_opcode^5'b00011))) || (!(|(decode_out_opcode^5'b10110)) && (|(execute_true_A))) || (!(|(decode_out_opcode^5'b00001)));
     assign take_rd = (!(|(decode_out_opcode^5'b00100)));
 
     // mux assignment: {00,01,10,11} = {+1, +N+1, T, $rd}
@@ -182,7 +187,7 @@ module processor(
     assign ctrl_DIV = !is_div_delayed && is_div;
 
     multdiv multdiv_module(
-        .data_operandA(decode_A_out), .data_operandB(decode_B_out), 
+        .data_operandA(execute_true_A), .data_operandB(execute_true_B), 
         .ctrl_MULT(ctrl_MULT), .ctrl_DIV(ctrl_DIV), 
         .clock(not_clock), 
         .data_result(multdiv_out), .data_exception(multdiv_exception), .data_resultRDY(multdiv_RDY));
@@ -236,7 +241,7 @@ module processor(
 
     // bypass 3: W->M B [logic: doing SW AND need to writeback reg value]
     assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22])))
-        ? ((|(memory_INSN_out[31:27]^5'b01000)) ? memory_O_out : memory_D_out) : execute_B_out; 
+        ? ((|(memory_INSN_out[31:27]^5'b01000)) ? data_writeReg : memory_D_out) : execute_B_out; 
 
     ////////// END OF MEMORY //////////
     wire [31:0] memory_O_out, memory_D_out, memory_INSN_out;
@@ -280,10 +285,12 @@ module processor(
     assign stall_logic[3] = multdiv_stall;
     assign stall_logic[4] = multdiv_stall;
 
-    // maximum stalling condition ------------------------------------------------ 
+    // stalling condition ------------------------------------------------ 
     wire lw_stall;
     assign lw_stall = (!(|(fetch_INSN_out[21:17]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
-                || (!(|(fetch_INSN_out[16:12]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)));
+                || (!(|(fetch_INSN_out[16:12]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)))
+        // or branching condition too
+                || (!(|(fetch_INSN_out[26:22]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (!(|(fetch_INSN_out[31:27]^5'b00010)) || !(|(fetch_INSN_out[31:27]^5'b00110))));
 
 	/* END CODE */
 
