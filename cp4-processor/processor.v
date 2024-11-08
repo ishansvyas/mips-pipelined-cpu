@@ -122,11 +122,13 @@ module processor(
     wire [31:0] execute_true_A, execute_true_B;
     // bypass 4: M->X A AND bypass 1: W->X A   
     assign execute_true_A = 
-        ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]))
+        ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22])
         ? execute_O_out : 
             ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable) 
             ? data_writeReg :
-            ((!(|(decode_INSN_out[31:27]^5'b10110)) && !(|(execute_INSN_out[31:27]^5'b10101))) ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : decode_A_out));
+            (((!(|(decode_INSN_out[31:27]^5'b10110)) || !(|(decode_INSN_out[21:17]^5'b11110)))) && !(|(execute_INSN_out[31:27]^5'b10101))) 
+                ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} 
+                : (((!(|(decode_INSN_out[21:17]^5'b11110))) && !(|(memory_INSN_out[31:27]^5'b10101))) ? setx_T_extended : decode_A_out)));
 
     // bypass 5: M->X B AND bypass 2: W->X B 
     assign execute_true_B = use_sign_extend_execute ? sign_extend_immed_out :
@@ -134,7 +136,10 @@ module processor(
             || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
         ? data_writeReg 
         : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))) 
-            ? execute_O_out : decode_B_out));
+            ? execute_O_out :
+            (((!(|(decode_INSN_out[16:12]^5'b11110))) && !(|(execute_INSN_out[31:27]^5'b10101)))
+                ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : 
+                    (((!(|(decode_INSN_out[16:12]^5'b11110))) && !(|(memory_INSN_out[31:27]^5'b10101))) ? setx_T_extended : decode_B_out))));
 
     /// MUX for B input
     wire use_sign_extend_execute;

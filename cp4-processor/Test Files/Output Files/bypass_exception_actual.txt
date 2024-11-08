@@ -4,13 +4,13 @@ Cycle  11: Wrote 2147483647 into register 1
 Cycle  12: Wrote 2 into register 2
 Cycle  13: Wrote 1 into register 3
 Cycle  14: Wrote 1 into register 30
-Cycle  15: Wrote 2 into register 4
+Cycle  15: Wrote 3 into register 4
 ============== Testing Mode ==============
 Reg  0:           0
 Reg  1:  2147483647
 Reg  2:           2
 Reg  3:           1
-Reg  4:           2
+Reg  4:           3
 Reg  5:           0
 Reg  6:           0
 Reg  7:           0

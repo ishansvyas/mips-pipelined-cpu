@@ -1,2 +1,0 @@
-Reg:  4 Expected:           3 Actual:           2
-Reg: 30 Expected:           0 Actual:           1
