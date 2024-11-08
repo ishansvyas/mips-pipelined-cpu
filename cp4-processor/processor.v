@@ -77,8 +77,9 @@ module processor(
 	register program_counter(.out(address_imem), .in(pc_in), .clk(not_clock), .en(!stall_logic[0]), .clr(reset));
     alu_cla_outer pc_plus_one_adder(.data_operandA(address_imem), .data_operandB(32'd1), .Cin(1'd0), .data_result(pc_plus_one), .Cout());
     
+
     // next PC calculation [SEE branching IN EXECUTE FOR LOGIC/DESTINATION CALCULATION]
-    mux4 pc_branch_control_mux(.out(pc_in), .select(pc_branch_control), .in0(pc_plus_one), .in1(pc_plus_N), .in2(decode_B_out), .in3(pc_T));
+    mux4 pc_branch_control_mux(.out(pc_in), .select(pc_branch_control), .in0(pc_plus_one), .in1(pc_plus_N), .in2(execute_true_B), .in3(pc_T));
     /*      PC+1:       pc_plus_one
             PC+1+N:     pc_plus_N
             $rd:        decode_B_out
@@ -119,20 +120,21 @@ module processor(
 
     // true A, true B
     wire [31:0] execute_true_A, execute_true_B;
-    // bypass 1: W->X A  AND  bypass 4: M->X A
+    // bypass 4: M->X A AND bypass 1: W->X A   
     assign execute_true_A = 
-        ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable)) 
-        ? data_writeReg 
-        : (((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]))
-            ? execute_O_out : 
+        ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]))
+        ? execute_O_out : 
+            ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable) 
+            ? data_writeReg :
             ((!(|(decode_INSN_out[31:27]^5'b10110)) && !(|(execute_INSN_out[31:27]^5'b10101))) ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : decode_A_out));
 
-    // bypass 2: W->X B  AND  bypass 5: M->X B
+    // bypass 5: M->X B AND bypass 2: W->X B 
     assign execute_true_B = use_sign_extend_execute ? sign_extend_immed_out :
         (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
             || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
         ? data_writeReg 
-        : ((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) ? execute_O_out : decode_B_out));
+        : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))) 
+            ? execute_O_out : decode_B_out));
 
     /// MUX for B input
     wire use_sign_extend_execute;
@@ -202,7 +204,6 @@ module processor(
     wire multdiv_stall;
     assign multdiv_stall = (is_mult || is_div) && (!multdiv_RDY);
     // stall logic assigned at bottom
-    
     
     // \\  // \\ output selector
     wire [31:0] execute_O_in;

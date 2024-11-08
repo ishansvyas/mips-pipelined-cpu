@@ -1,5 +1,5 @@
-nop 	                # simple jr test case
-nop                     # Author Unknown, Modified by Will Denton
+nop 	# simple jr test case
+nop 
 nop 
 nop
 nop
@@ -13,20 +13,15 @@ sub     $r4, $r0, $r2   # $r4 = -5
 nop
 nop
 nop 	
-addi	$r31, $r0, 25	# $r31 = 25
-nop                     # Avoid bypassing
-nop
-nop
-jr	$r31		        # go to j2
-nop			            # flushed instruction
-nop			            # flushed instruction
+addi	$r31, $r0, 20	# $r31 = 20
+jr	$r31		# go to j2
 addi 	$r20, $r20, 1	# r20 += 1 (Incorrect)
-addi 	$r21, $r21, 1	# r21 += 1 (Incorrect)
-addi 	$r22, $r22, 1	# r22 += 1 (Incorrect)
+addi 	$r20, $r20, 1	# r20 += 1 (Incorrect)
+addi 	$r20, $r20, 1	# r20 += 1 (Incorrect)
 j2:
 addi	$r10, $r10, 1	# r10 += 1 (Correct)
 nop
 nop
 nop
 nop
-# Final: $r10 should be 1, $r20, $r21, and $r22 should be 0
+# Final: $r10 should be 1, $r20 should be 0
