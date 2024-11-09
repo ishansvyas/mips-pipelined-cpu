@@ -96,7 +96,7 @@ module processor(
     ////////// START OF DECODE //////////
     // flush logic 
     wire [31:0] fetch_INSN_out; // does this break my code? ans: yes ( || stall_logic[1])
-    assign fetch_INSN_out = |pc_branch_control ? nop : fetch_INSN_out_raw;
+    assign fetch_INSN_out = (|pc_branch_control) ? nop : fetch_INSN_out_raw;
     
     wire ctrl_readRegB_logic;
     assign ctrl_readRegB_logic = !(|(fetch_INSN_out[31:27]^5'b00110)) || !(|(fetch_INSN_out[31:27]^5'b00010))
@@ -110,12 +110,14 @@ module processor(
     assign ctrl_readRegB = ctrl_readRegB_logic ? fetch_INSN_out[26:22] : fetch_INSN_out[16:12]; 
 	// assign data_writeReg IS DONE IN WRITEBACK STAGE
 
+    wire [31:0] decode_INSN_in;
+    assign decode_INSN_in = lw_stall ? nop : fetch_INSN_out;
     ////////// END OF DECODE //////////
-    wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out, decode_INSN_in;  
+    wire [31:0] decode_PC_out, decode_A_out, decode_B_out, decode_INSN_out;  
     register decode_PC(.out(decode_PC_out), .in(fetch_PC_out), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     register decode_A(.out(decode_A_out), .in(data_readRegA), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     register decode_B(.out(decode_B_out), .in(data_readRegB), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
-    register decode_INSN(.out(decode_INSN_out), .in(fetch_INSN_out), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
+    register decode_INSN(.out(decode_INSN_out), .in(decode_INSN_in), .clk(not_clock), .en(!stall_logic[2]), .clr(reset));
     ////////// START OF EXECUTE //////////
 
     // true A, true B
@@ -128,11 +130,12 @@ module processor(
             ? data_writeReg :
             (((!(|(decode_INSN_out[31:27]^5'b10110)) || !(|(decode_INSN_out[21:17]^5'b11110)))) && !(|(execute_INSN_out[31:27]^5'b10101))) 
                 ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} 
-                : (((!(|(decode_INSN_out[21:17]^5'b11110))) && !(|(memory_INSN_out[31:27]^5'b10101))) ? setx_T_extended : decode_A_out)));
-
+                : (((!(|(decode_INSN_out[21:17]^5'b11110)) || !(|(decode_INSN_out[31:27]^5'b10110))) && !(|(memory_INSN_out[31:27]^5'b10101))) ? setx_T_extended : decode_A_out)));
+    
     // bypass 5: M->X B AND bypass 2: W->X B 
-    assign execute_true_B = (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
-            || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
+    assign execute_true_B = 
+    (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
+            || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)) || !(|(decode_INSN_out[31:27]^5'b00100)))))
         ? data_writeReg 
         : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))
                     || (!(|(decode_INSN_out[26:22]^execute_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110))))) 
@@ -150,7 +153,7 @@ module processor(
     // ALU opcode -> account for addi insn needing opcode to be 00000. also sw 
     wire [4:0] execute_alu_opc;
     wire [1:0] alu_opc_is_diff;
-    assign alu_opc_is_diff[0] = !(|(decode_INSN_out[31:27]^5'b00101))  || !(|(decode_INSN_out[31:27]^5'b00111)); // is addi OR sw
+    assign alu_opc_is_diff[0] = !(|(decode_INSN_out[31:27]^5'b00101))  || !(|(decode_INSN_out[31:27]^5'b00111)) || !(|(decode_INSN_out[31:27]^5'b01000)); // is addi OR sw/lw
     assign alu_opc_is_diff[1] = !(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)); // is branch
     mux4 #(5) execute_alu_opc_mux(.out(execute_alu_opc), .select(alu_opc_is_diff), .in0(decode_INSN_out[6:2]), .in1(5'b00000), .in2(5'b00001), .in3(5'b00000));
 
@@ -299,10 +302,10 @@ module processor(
     assign stall_logic[3] = multdiv_stall;
     assign stall_logic[4] = multdiv_stall;
 
-    // stalling condition ------------------------------------------------ 
+    // stalling condition ------------------------------------------------  FIX STALL
     wire lw_stall;
-    assign lw_stall = (!(|(fetch_INSN_out[21:17]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
-                || (!(|(fetch_INSN_out[16:12]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)))
+    assign lw_stall = (!(|(ctrl_readRegA^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
+                || (!(|(ctrl_readRegB^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)))
         // or branching condition too
                 || (!(|(fetch_INSN_out[26:22]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (!(|(fetch_INSN_out[31:27]^5'b00010)) || !(|(fetch_INSN_out[31:27]^5'b00110))));
 

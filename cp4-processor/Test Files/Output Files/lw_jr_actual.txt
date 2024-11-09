@@ -1,13 +1,12 @@
-Cycle   9: Wrote 830 into register 1
-Cycle  13: Wrote 830 into register 4
-Cycle  15: Wrote 842 into register 5
+Cycle   9: Wrote 10 into register 1
+Cycle  14: Wrote 10 into register 4
 ============== Testing Mode ==============
 Reg  0:           0
-Reg  1:         830
+Reg  1:          10
 Reg  2:           0
 Reg  3:           0
-Reg  4:         830
-Reg  5:         842
+Reg  4:          10
+Reg  5:           0
 Reg  6:           0
 Reg  7:           0
 Reg  8:           0

@@ -1,4 +1,3 @@
-
 module regfile(
 	clock, ctrl_writeEnable, ctrl_reset, ctrl_writeReg,
 	ctrl_readRegA, ctrl_readRegB, data_writeReg, data_readRegA,
@@ -35,7 +34,6 @@ module regfile(
 	assign data_readRegA = registers[ctrl_readRegA];
 	assign data_readRegB = registers[ctrl_readRegB];
 	
-
 endmodule
 
 	// my own regfile, for testing purposes: 
@@ -93,8 +91,5 @@ module regfile (
 			end
         end
     endgenerate
-
-
-
 endmodule
 */
