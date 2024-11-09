@@ -131,8 +131,7 @@ module processor(
                 : (((!(|(decode_INSN_out[21:17]^5'b11110))) && !(|(memory_INSN_out[31:27]^5'b10101))) ? setx_T_extended : decode_A_out)));
 
     // bypass 5: M->X B AND bypass 2: W->X B 
-    assign execute_true_B = use_sign_extend_execute ? sign_extend_immed_out :
-        (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
+    assign execute_true_B = (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
             || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
         ? data_writeReg 
         : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))
@@ -148,18 +147,19 @@ module processor(
     wire [31:0] sign_extend_immed_out;
     sign_extend_17_32 extender(.out(sign_extend_immed_out), .in(decode_INSN_out[16:0]));
 
-    // ALU opcode -> account for addi insn needing opcode to be 00000.
+    // ALU opcode -> account for addi insn needing opcode to be 00000. also sw 
     wire [4:0] execute_alu_opc;
     wire [1:0] alu_opc_is_diff;
-    assign alu_opc_is_diff[0] = !(|(decode_INSN_out[31:27]^5'b00101)); // is addi
+    assign alu_opc_is_diff[0] = !(|(decode_INSN_out[31:27]^5'b00101))  || !(|(decode_INSN_out[31:27]^5'b00111)); // is addi OR sw
     assign alu_opc_is_diff[1] = !(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)); // is branch
     mux4 #(5) execute_alu_opc_mux(.out(execute_alu_opc), .select(alu_opc_is_diff), .in0(decode_INSN_out[6:2]), .in1(5'b00000), .in2(5'b00001), .in3(5'b00000));
 
     // ALU
-    wire [31:0] alu_out;
+    wire [31:0] alu_out, alu_B_in;
     wire alu_isNE, alu_isLT, alu_ovf;
+    assign alu_B_in = use_sign_extend_execute ? sign_extend_immed_out : execute_true_B; // specifically for sw case to allow bypassing
     alu execute_alu(
-            .data_operandA(execute_true_A), .data_operandB(execute_true_B),
+            .data_operandA(execute_true_A), .data_operandB(alu_B_in),
             .ctrl_ALUopcode(execute_alu_opc), .ctrl_shiftamt(decode_INSN_out[11:7]),
             .data_result(alu_out),
             .isNotEqual(alu_isNE), .isLessThan(alu_isLT), .overflow(alu_ovf));    
@@ -244,7 +244,7 @@ module processor(
     wire execute_overflow_ex;
     assign execute_INSN_in = execute_overflow ? {5'b10101,setx_T_insn} : decode_INSN_out;
     register execute_O(.out(execute_O_out), .in(execute_O_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
-    register execute_B(.out(execute_B_out), .in(decode_B_out), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
+    register execute_B(.out(execute_B_out), .in(execute_true_B), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     register execute_INSN(.out(execute_INSN_out), .in(execute_INSN_in), .clk(not_clock), .en(!stall_logic[3]), .clr(reset));
     dffe_ref execute_overflow_dff_ex(.q(execute_overflow_ex), .d(execute_overflow), .clk(not_clock), .en(!stall_logic[4]), .clr(reset));
     ////////// START OF MEMORY //////////
