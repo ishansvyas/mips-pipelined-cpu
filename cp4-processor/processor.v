@@ -135,7 +135,8 @@ module processor(
         (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
             || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))))
         ? data_writeReg 
-        : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))) 
+        : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))
+                    || (!(|(decode_INSN_out[26:22]^execute_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110))))) 
             ? execute_O_out :
             (((!(|(decode_INSN_out[16:12]^5'b11110))) && !(|(execute_INSN_out[31:27]^5'b10101)))
                 ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : 
@@ -305,6 +306,6 @@ module processor(
         // or branching condition too
                 || (!(|(fetch_INSN_out[26:22]^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (!(|(fetch_INSN_out[31:27]^5'b00010)) || !(|(fetch_INSN_out[31:27]^5'b00110))));
 
-	/* END CODE */
+    /* END CODE */
 
 endmodule
