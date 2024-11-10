@@ -124,7 +124,7 @@ module processor(
     wire [31:0] execute_true_A, execute_true_B;
     // bypass 4: M->X A AND bypass 1: W->X A   
     assign execute_true_A = 
-        ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22])
+        ((!(|(decode_INSN_out[21:17]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22] && execute_INSN_out[31:27]!=5'b00111)
         ? execute_O_out : 
             ((!(|(decode_INSN_out[21:17]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable) 
             ? data_writeReg :
@@ -134,11 +134,13 @@ module processor(
     
     // bypass 5: M->X B AND bypass 2: W->X B 
     assign execute_true_B = 
-    (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22])
-            || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)) || !(|(decode_INSN_out[31:27]^5'b00100)))))
+    (((!(|(decode_INSN_out[16:12]^memory_INSN_out[26:22])) && |memory_INSN_out[26:22] && ctrl_writeEnable)
+            || (!(|(decode_INSN_out[26:22]^memory_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)) || !(|(decode_INSN_out[31:27]^5'b00100))))
+            || (decode_INSN_out[26:22]==memory_INSN_out[26:22] && decode_INSN_out[31:27]==5'b00111 && ctrl_writeEnable))
         ? data_writeReg 
         : (((!(|(decode_INSN_out[16:12]^execute_INSN_out[26:22])) && |execute_INSN_out[26:22]) || (!(|(decode_INSN_out[31:27]^5'b00100)) && !(|(execute_INSN_out[26:22]^decode_INSN_out[26:22])))
-                    || (!(|(decode_INSN_out[26:22]^execute_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110))))) 
+                    || (!(|(decode_INSN_out[26:22]^execute_INSN_out[26:22])) && (!(|(decode_INSN_out[31:27]^5'b00010)) || !(|(decode_INSN_out[31:27]^5'b00110)))) 
+                    || (decode_INSN_out[26:22]==execute_INSN_out[26:22] && decode_INSN_out[31:27]==5'b00111 && execute_INSN_out[31:27]!=5'b00111)) 
             ? execute_O_out :
             (((!(|(decode_INSN_out[16:12]^5'b11110))) && !(|(execute_INSN_out[31:27]^5'b10101)))
                 ? {{5{execute_INSN_out[26]}},execute_INSN_out[26:0]} : 
@@ -256,7 +258,7 @@ module processor(
     assign wren = !(|(execute_INSN_out[31:27]^5'b00111));
 
     // bypass 3: W->M B [logic: doing SW AND need to writeback reg value]
-    assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22])))
+    assign data = (!(|(execute_INSN_out[31:27]^5'b00111)) && !(|(execute_INSN_out[26:22]^memory_INSN_out[26:22])) && (ctrl_writeEnable))
         ? ((|(memory_INSN_out[31:27]^5'b01000)) ? data_writeReg : memory_D_out) : execute_B_out; 
     
 

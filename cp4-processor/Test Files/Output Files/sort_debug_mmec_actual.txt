@@ -60,9 +60,15 @@ Cycle  80: Wrote 10 into register 11
 Cycle  82: Wrote 20 into register 12
 Cycle  85: Wrote 10 into register 13
 Cycle  92: Wrote 10 into register 14
-Cycle  93: Wrote 8 into register 15
+Cycle  93: Wrote 10 into register 15
 Cycle  97: Wrote 10 into register 16
 Cycle  99: Wrote 20 into register 17
+Cycle 102: Wrote 20 into register 18
+Cycle 103: Wrote 10 into register 18
+Cycle 106: Wrote 10 into register 19
+Cycle 107: Wrote 20 into register 20
+Cycle 112: Wrote 10 into register 21
+Cycle 113: Wrote 20 into register 22
 ============== Testing Mode ==============
 Reg  0:           0
 Reg  1:          10
@@ -79,14 +85,14 @@ Reg 11:          10
 Reg 12:          20
 Reg 13:          10
 Reg 14:          10
-Reg 15:           8
+Reg 15:          10
 Reg 16:          10
 Reg 17:          20
-Reg 18:           0
-Reg 19:           0
-Reg 20:           0
-Reg 21:           0
-Reg 22:           0
+Reg 18:          10
+Reg 19:          10
+Reg 20:          20
+Reg 21:          10
+Reg 22:          20
 Reg 23:           0
 Reg 24:           0
 Reg 25:           0
