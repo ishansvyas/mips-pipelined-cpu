@@ -304,7 +304,7 @@ module processor(
     assign stall_logic[3] = multdiv_stall;
     assign stall_logic[4] = multdiv_stall;
 
-    // stalling condition ------------------------------------------------  FIX STALL
+    // stalling condition 
     wire lw_stall;
     assign lw_stall = (!(|(ctrl_readRegA^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000))) 
                 || (!(|(ctrl_readRegB^decode_INSN_out[26:22])) && !(|(decode_INSN_out[31:27]^5'b01000)) && (|(fetch_INSN_out[31:27]^5'b00111)))
